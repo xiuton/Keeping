@@ -1,0 +1,39 @@
+name: Android Build and Publish
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 关键权限设置
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Build Release APK
+      run: |
+        chmod +x gradlew
+        ./gradlew assembleRelease
+
+    - name: Prepare APK for publish
+      run: |
+        # 重命名 APK 文件
+        cp app/release/*.apk app-release.apk
+        echo "APK generated at $(date)" > build-info.txt
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: app/release/app-release.apk
+        publish_branch: gh-build
