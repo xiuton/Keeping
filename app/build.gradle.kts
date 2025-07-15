@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "me.ganto.keeping"
-    compileSdk = 36
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "me.ganto.keeping"
-        minSdk = 36
-        targetSdk = 36
+        minSdk = 23
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -50,6 +50,19 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.runtime:runtime:1.4.3")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("com.google.code.gson:gson:2.10.1")
+    // Compose Charts
+    implementation("androidx.compose.material3:material3:1.2.0-alpha10") // 确保最新
+    implementation("androidx.compose.ui:ui-graphics:1.4.3")
+    implementation("androidx.compose.ui:ui:1.4.3")
+    implementation("androidx.compose.foundation:foundation:1.4.3")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.4.3")
+    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
+    // 图表库
+    implementation("com.patrykandpatrick.vico:compose:1.13.0")
+    implementation("com.patrykandpatrick.vico:core:1.13.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
