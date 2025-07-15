@@ -28,12 +28,12 @@ jobs:
     - name: Prepare APK for publish
       run: |
         # 重命名 APK 文件
-        cp app/build/outputs/apk/release/*.apk app-release.apk
+        cp app/build/outputs/apk/release/*.apk release/app-release.apk
         echo "APK generated at $(date)" > build-info.txt
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: app/build/outputs/apk/release/
+        publish_dir: release/
         publish_branch: gh-build
