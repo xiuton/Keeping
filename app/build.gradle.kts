@@ -48,7 +48,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
+    // implementation(libs.androidx.material3) // 已用高版本 material3，避免依赖冲突，注释此行
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.runtime:runtime:1.4.3")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
@@ -59,6 +59,8 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.4.3")
     implementation("androidx.compose.foundation:foundation:1.4.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.4.3")
+    // implementation("androidx.compose.foundation:foundation-text") // foundation-text 依赖已移除，避免解析失败
+    implementation("androidx.compose.ui:ui-text")
     implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
     // 图表库
     implementation("com.patrykandpatrick.vico:compose:1.13.0")
@@ -70,4 +72,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 }
