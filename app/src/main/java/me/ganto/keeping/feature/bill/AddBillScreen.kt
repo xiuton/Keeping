@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material3.PrimaryTabRow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -59,11 +60,11 @@ fun AddBillScreen(
                     title = { Text("新增账单") },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                         }
                     }
                 )
-                TabRow(selectedTabIndex = tabIndex) {
+                PrimaryTabRow(selectedTabIndex = tabIndex) {
                     Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }) { Text("支出") }
                     Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }) { Text("收入") }
                 }
@@ -147,15 +148,42 @@ fun AddBillScreen(
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
+            // 金额输入框
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
                 label = { Text("金额") },
                 singleLine = true,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth(),
-                colors = textFieldColors,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background
+                ),
                 textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    fontSize = 15.sp
+                )
+            )
+            // 备注输入框
+            OutlinedTextField(
+                value = remark,
+                onValueChange = { remark = it },
+                label = { Text("备注") },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background
+                ),
+                textStyle = LocalTextStyle.current.copy(
+                    textAlign = TextAlign.Start,
+                    fontSize = 15.sp
                 )
             )
             Row(verticalAlignment = Alignment.CenterVertically) {

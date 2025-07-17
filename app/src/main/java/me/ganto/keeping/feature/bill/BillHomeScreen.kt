@@ -33,6 +33,7 @@ import me.ganto.keeping.theme.CategoryTeal
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
 fun BillHomeScreen(
@@ -81,20 +82,75 @@ fun BillHomeScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // 统计数据定义，确保作用域正确
+        val expense = filteredBills.filter { it.amount < 0 }.sumOf { it.amount }
+        val income = filteredBills.filter { it.amount > 0 }.sumOf { it.amount }
+        // 新统计卡片区域
         Card(
             modifier = Modifier
-                .fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(3.dp)
         ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                val expense = filteredBills.filter { it.amount < 0 }.sumOf { it.amount }
-                val income = filteredBills.filter { it.amount > 0 }.sumOf { it.amount }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("支出：", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("¥${-expense}", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("收入：", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("¥$income", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Column(Modifier.padding(vertical = 24.dp, horizontal = 20.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 支出
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(16.dp)
+                                    .background(MaterialTheme.colorScheme.error, shape = CircleShape)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("支出", color = MaterialTheme.colorScheme.error, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "¥${-expense}",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 26.sp
+                        )
+                    }
+                    // 收入
+                    Column(horizontalAlignment = Alignment.End) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(16.dp)
+                                    .background(MaterialTheme.colorScheme.tertiary, shape = CircleShape)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("收入", color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "¥$income",
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 26.sp
+                        )
+                    }
+                }
+                // 结余
+                Spacer(Modifier.height(18.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("结余", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
+                    Text(
+                        text = "¥${income + expense}",
+                        color = if (income + expense >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp
+                    )
                 }
             }
         }
@@ -141,52 +197,87 @@ fun BillRow(
         "医疗" -> CategoryRed
         else -> CategoryGrey
     }
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 0.dp)
             .clickable { onEdit() },
-        verticalAlignment = Alignment.CenterVertically
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
-        // 分类色块
-        Box(
+        Row(
             modifier = Modifier
-                .size(44.dp)
-                .background(
-                    color = categoryColor,
-                    shape = MaterialTheme.shapes.medium
-                ),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(bill.category.take(1), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // 主行：分类 + 金额
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(bill.category, fontWeight = FontWeight.Medium, fontSize = 16.sp)
-                Spacer(modifier = Modifier.width(8.dp))
+            // 左侧：分类色块+分类名
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(categoryColor, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    bill.category.take(1),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        bill.category,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        bill.payType,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                }
+                if (bill.remark.isNotBlank()) {
+                    Text(
+                        bill.remark,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        maxLines = 1
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
                 Text(
                     (if (bill.amount > 0) "+" else "") + "¥" + String.format("%.2f", bill.amount),
                     color = if (bill.amount > 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 18.sp
+                )
+                Text(
+                    bill.time,
+                    color = MaterialTheme.colorScheme.outline,
+                    fontSize = 12.sp
                 )
             }
-            // 副行：方式 + 备注
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(bill.payType, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                if (bill.remark.isNotBlank()) {
-                    Text("  |  ", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                    Text(bill.remark, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                }
+            IconButton(
+                onClick = { showConfirm = true },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "删除",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
-            // 时间
-            Text(bill.time, color = MaterialTheme.colorScheme.outline, fontSize = 12.sp)
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        IconButton(onClick = { showConfirm = true }, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Filled.Close, contentDescription = "删除", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
         }
     }
     if (showConfirm) {
@@ -196,10 +287,18 @@ fun BillRow(
             title = { Text("确认删除？") },
             text = { Text("确定要删除该账单吗？") },
             confirmButton = {
-                TextButton(onClick = { showConfirm = false; onDelete() }, shape = MaterialTheme.shapes.medium, modifier = Modifier.height(40.dp)) { Text("确定", color = CategoryRed) }
+                TextButton(
+                    onClick = { showConfirm = false; onDelete() },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.height(40.dp)
+                ) { Text("确定", color = CategoryRed) }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirm = false }, shape = MaterialTheme.shapes.medium, modifier = Modifier.height(40.dp)) { Text("取消") }
+                TextButton(
+                    onClick = { showConfirm = false },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.height(40.dp)
+                ) { Text("取消") }
             }
         )
     }

@@ -138,54 +138,72 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("深色模式", fontSize = 16.sp)
-                Switch(checked = isDark, onCheckedChange = onDarkChange)
+            Text("深色模式", fontSize = 16.sp)
+            Switch(checked = isDark, onCheckedChange = onDarkChange)
             }
         }
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("管理类型", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     RadioButton(
                         selected = selectedType == "支出",
                         onClick = { selectedType = "支出" }
                     )
-                    Text("支出", fontSize = 15.sp)
+            Text("支出", fontSize = 15.sp)
                     Spacer(modifier = Modifier.width(16.dp))
                     RadioButton(
                         selected = selectedType == "收入",
                         onClick = { selectedType = "收入" }
                     )
-                    Text("收入", fontSize = 15.sp)
+            Text("收入", fontSize = 15.sp)
                 }
             }
         }
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("分类管理", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+        Text("分类管理", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newCategory,
-                        onValueChange = { newCategory = it },
-                        label = { Text("添加分类") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        val trimmed = newCategory.trim()
-                        if (trimmed.isNotEmpty() && !currentCategories.contains(trimmed)) {
-                            scope.launch {
-                                saveCategories(currentCategories + trimmed)
-                                newCategory = ""
-                            }
-                        }
-                    }) {
-                        Text("添加")
-                    }
+        Row(
+    modifier = Modifier.fillMaxWidth(),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
+) {
+    OutlinedTextField(
+        value = newCategory,
+        onValueChange = { newCategory = it },
+        label = { Text("添加分类") },
+        singleLine = true,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.weight(1f),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedContainerColor = MaterialTheme.colorScheme.background,
+            unfocusedContainerColor = MaterialTheme.colorScheme.background
+        ),
+        textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
+    )
+    Button(
+        onClick = {
+            val trimmed = newCategory.trim()
+            if (trimmed.isNotEmpty() && !currentCategories.contains(trimmed)) {
+                scope.launch {
+                    saveCategories(currentCategories + trimmed)
+                    newCategory = ""
                 }
+            }
+        },
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.height(56.dp)
+    ) {
+        Text("添加")
+    }
+}
                 Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -193,38 +211,40 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     currentCategories.forEach { category ->
+                        val selected = false // 设置页不需要选中高亮
                         Card(
                             modifier = Modifier
-                                .padding(2.dp)
-                                .widthIn(min = 80.dp, max = 120.dp),
+                                .widthIn(min = 64.dp, max = 120.dp)
+                                .clickable {
+                                    showEditDialog = "category" to category
+                                    editText = category
+                                },
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Text(
                                     text = category,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
-                                            showEditDialog = "category" to category
-                                            editText = category
-                                        }
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.weight(1f)
                                 )
                                 if (currentCategories.size > 1) {
                                     IconButton(
                                         onClick = { showDeleteDialog = "category" to category },
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
                                             contentDescription = "删除",
-                                            modifier = Modifier.size(12.dp)
+                                            modifier = Modifier.size(14.dp),
+                                            tint = MaterialTheme.colorScheme.error
                                         )
                                     }
                                 }
@@ -242,27 +262,42 @@ fun SettingsScreen(
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newPayType,
-                        onValueChange = { newPayType = it },
-                        label = { Text("添加方式") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        val trimmed = newPayType.trim()
-                        if (trimmed.isNotEmpty() && !currentPayTypes.contains(trimmed)) {
-                            scope.launch {
-                                savePayTypes(currentPayTypes + trimmed)
-                                newPayType = ""
-                            }
-                        }
-                    }) {
-                        Text("添加")
-                    }
+        Row(
+    modifier = Modifier.fillMaxWidth(),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
+) {
+    OutlinedTextField(
+        value = newPayType,
+        onValueChange = { newPayType = it },
+        label = { Text("添加方式") },
+        singleLine = true,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.weight(1f),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedContainerColor = MaterialTheme.colorScheme.background,
+            unfocusedContainerColor = MaterialTheme.colorScheme.background
+        ),
+        textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
+    )
+    Button(
+        onClick = {
+            val trimmed = newPayType.trim()
+            if (trimmed.isNotEmpty() && !currentPayTypes.contains(trimmed)) {
+                scope.launch {
+                    savePayTypes(currentPayTypes + trimmed)
+                    newPayType = ""
                 }
+            }
+        },
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.height(56.dp)
+    ) {
+        Text("添加")
+    }
+}
                 Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -270,38 +305,40 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     currentPayTypes.forEach { payType ->
+                        val selected = false // 设置页不需要选中高亮
                         Card(
                             modifier = Modifier
-                                .padding(2.dp)
-                                .widthIn(min = 80.dp, max = 120.dp),
+                                .widthIn(min = 64.dp, max = 120.dp)
+                                .clickable {
+                                    showEditDialog = "payType" to payType
+                                    editText = payType
+                                },
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Text(
                                     text = payType,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
-                                            showEditDialog = "payType" to payType
-                                            editText = payType
-                                        }
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.weight(1f)
                                 )
                                 if (currentPayTypes.size > 1) {
                                     IconButton(
                                         onClick = { showDeleteDialog = "payType" to payType },
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
                                             contentDescription = "删除",
-                                            modifier = Modifier.size(12.dp)
+                                            modifier = Modifier.size(14.dp),
+                                            tint = MaterialTheme.colorScheme.error
                                         )
                                     }
                                 }
@@ -320,7 +357,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        scope.launch {
+                            scope.launch {
                             when (type) {
                                 "category" -> if (currentCategories.size > 1) {
                                     saveCategories(currentCategories.filter { it != name })
