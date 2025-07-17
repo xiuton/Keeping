@@ -12,14 +12,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.ganto.keeping.core.model.BillItem
-import me.ganto.keeping.core.ui.SuperDropdownField
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.ExperimentalLayoutApi

@@ -2,11 +2,9 @@ package me.ganto.keeping.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import me.ganto.keeping.R
 
 // 使用 Google Fonts Montserrat（如未集成字体文件，可用系统默认字体）
 val Montserrat = FontFamily.Default // 如需自定义字体，可替换为 FontFamily(Font(R.font.montserrat_regular))
