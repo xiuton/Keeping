@@ -43,6 +43,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 
 const val ROUTE_MAIN = "main"
 const val ROUTE_ADD_BILL = "addBill"
@@ -65,7 +69,37 @@ fun NavGraph(
     setShowAddDialog: (Boolean) -> Unit
 ) {
     val navController = rememberNavController()
+    // Add state for currentYearMonth as Pair<Int, Int>
+    val today = java.util.Calendar.getInstance()
+    val currentYearMonth = rememberSaveable { mutableStateOf(Pair(today.get(java.util.Calendar.YEAR), today.get(java.util.Calendar.MONTH) + 1)) }
+    val onYearMonthChange: (Pair<Int, Int>) -> Unit = { currentYearMonth.value = it }
+    // 新增：日期选择弹窗状态
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
     KeepingTheme(darkTheme = isDark) {
+        // 日期选择弹窗（全局放在Scaffold外层）
+        if (showDatePicker) {
+            val pickerState = rememberDatePickerState(
+                initialSelectedDateMillis = try {
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).parse("${currentYearMonth.value.first}-${currentYearMonth.value.second.toString().padStart(2, '0')}-01")?.time
+                } catch (e: Exception) { null }
+            )
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        pickerState.selectedDateMillis?.let { millis ->
+                            val cal = java.util.Calendar.getInstance().apply { timeInMillis = millis }
+                            onYearMonthChange(Pair(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1))
+                        }
+                        showDatePicker = false
+                    }) { Text("确定") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                },
+                content = { DatePicker(state = pickerState) }
+            )
+        }
         NavHost(navController = navController, startDestination = ROUTE_MAIN) {
             composable(ROUTE_MAIN) {
                 Scaffold(
@@ -73,31 +107,40 @@ fun NavGraph(
                         TopAppBar(
                             title = {
                                 when (navIndex) {
-                                    0 -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                    0 -> Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
                                         IconButton(onClick = {
-                                            // 这里需要 currentYearMonth 逻辑，可通过参数传递
+                                            val (y, m) = currentYearMonth.value
+                                            onYearMonthChange(if (m == 1) Pair(y - 1, 12) else Pair(y, m - 1))
                                         }) { Icon(Icons.Filled.ArrowBack, contentDescription = "上个月") }
-                                        Text("账单", fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                        Text(
+                                            text = "${currentYearMonth.value.first}年${currentYearMonth.value.second}月",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 20.sp,
+                                            modifier = Modifier.clickable { showDatePicker = true },
+                                            textAlign = TextAlign.Center
+                                        )
                                         IconButton(onClick = {
-                                            // 这里需要 currentYearMonth 逻辑，可通过参数传递
+                                            val (y, m) = currentYearMonth.value
+                                            onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
                                         }) { Icon(Icons.Filled.ArrowForward, contentDescription = "下个月") }
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Button(
+                                            onClick = { saveSortBy(if (sortBy == "create") "date" else "create") },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                            modifier = Modifier.height(32.dp)
+                                        ) {
+                                            Text(if (sortBy == "create") "创建时间" else "账单日期", fontSize = 14.sp)
+                                        }
                                     }
                                     1 -> Text("收支趋势图表", fontWeight = FontWeight.Bold)
                                     2 -> Text("设置", fontWeight = FontWeight.Bold)
                                 }
                             },
                             actions = {
-                                if (navIndex == 0) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("排序:", fontSize = 14.sp)
-                                        Spacer(Modifier.width(4.dp))
-                                        Button(
-                                            onClick = { saveSortBy(if (sortBy == "create") "date" else "create") },
-                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                            modifier = Modifier.height(32.dp)
-                                        ) { Text(if (sortBy == "create") "创建时间" else "账单日期", fontSize = 14.sp) }
-                                    }
-                                }
+                                // 顶部右侧不再放排序按钮
                             }
                         )
                     },
@@ -123,7 +166,10 @@ fun NavGraph(
                                 expenseCategories = expenseCategories,
                                 incomeCategories = incomeCategories,
                                 expensePayTypes = expensePayTypes,
-                                incomePayTypes = incomePayTypes
+                                incomePayTypes = incomePayTypes,
+                                currentYearMonth = currentYearMonth.value,
+                                onYearMonthChange = onYearMonthChange,
+                                onSortChange = { saveSortBy(if (sortBy == "create") "date" else "create") }
                             )
                             1 -> BillChartScreen(bills = bills)
                             2 -> SettingsScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) })

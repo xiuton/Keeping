@@ -51,7 +51,7 @@ val AppShapes = Shapes(
 @Composable
 fun KeepingTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // 统一风格，禁用动态取色
+    dynamicColor: Boolean = true, // 启用动态取色，跟随壁纸
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

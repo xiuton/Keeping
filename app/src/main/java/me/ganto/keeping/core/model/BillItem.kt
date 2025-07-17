@@ -4,7 +4,6 @@ import java.util.UUID
 
 // 账单数据类，增加唯一id
 data class BillItem(
-    val title: String,
     val category: String,
     val amount: Double,
     val remark: String,

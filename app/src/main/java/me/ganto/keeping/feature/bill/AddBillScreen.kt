@@ -1,6 +1,8 @@
 package me.ganto.keeping.feature.bill
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -14,8 +16,15 @@ import me.ganto.keeping.core.ui.SuperDropdownField
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddBillScreen(
     onAdd: (BillItem) -> Unit,
@@ -32,13 +41,12 @@ fun AddBillScreen(
 
     var category by remember { mutableStateOf(categories[0]) }
     var payType by remember { mutableStateOf(payTypes[0]) }
-    var title by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
     var remark by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(Date()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     var payTypeExpanded by remember { mutableStateOf(false) }
+    var amount by remember { mutableStateOf("") }
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = MaterialTheme.colorScheme.primary,
         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -65,65 +73,92 @@ fun AddBillScreen(
             }
         }
     ) { innerPadding ->
+        val scrollState = rememberScrollState()
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(innerPadding)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .statusBarsPadding()
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("标题") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = textFieldColors,
-                textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Start,
-                    lineHeight = 20.sp
-                )
-            )
-            SuperDropdownField(
-                value = category,
-                label = "分类",
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                items = categories,
-                onItemSelected = { category = it },
+            // 分类选择平铺
+            Text("分类", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                categories.forEach { item ->
+                    val selected = item == category
+                    Card(
+                        modifier = Modifier
+                            .widthIn(min = 64.dp, max = 120.dp)
+                            .clickable { category = item },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = item,
+                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            // 方式选择平铺
+            Text("方式", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                payTypes.forEach { item ->
+                    val selected = item == payType
+                    Card(
+                        modifier = Modifier
+                            .widthIn(min = 64.dp, max = 120.dp)
+                            .clickable { payType = item },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = item,
+                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
                 label = { Text("金额") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
                 textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Start,
-                    lineHeight = 20.sp
-                )
-            )
-            SuperDropdownField(
-                value = payType,
-                label = if (type == "支出") "支付方式" else "收入方式",
-                expanded = payTypeExpanded,
-                onExpandedChange = { payTypeExpanded = it },
-                items = payTypes,
-                onItemSelected = { payType = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = remark,
-                onValueChange = { remark = it },
-                label = { Text("备注") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = textFieldColors,
-                textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Start,
-                    lineHeight = 20.sp
+                    textAlign = TextAlign.Start
                 )
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -134,13 +169,12 @@ fun AddBillScreen(
             Button(
                 onClick = {
                     val amt = amount.toDoubleOrNull() ?: 0.0
-                    if (title.isNotBlank() && category.isNotBlank() && amt > 0.0) {
+                    if (category.isNotBlank() && amt > 0.0) {
                         val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
                         val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
                         val realAmount = if (type == "支出") -amt else amt
                         onAdd(
                             BillItem(
-                                title = title,
                                 category = category,
                                 amount = realAmount,
                                 remark = remark,
