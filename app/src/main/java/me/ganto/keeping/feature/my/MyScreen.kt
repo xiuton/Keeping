@@ -44,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import java.io.InputStream
 import java.io.OutputStream
+import androidx.compose.material.icons.filled.Edit
 
 @Composable
 fun MyScreen(
@@ -383,6 +384,73 @@ fun MyScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+    // 头像/昵称编辑弹窗
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("编辑个人信息") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        Card(
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clickable { launcher.launch("image/*") },
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            if (avatarUri != null) {
+                                AsyncImage(
+                                    model = avatarUri,
+                                    contentDescription = "头像",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = "头像",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .offset(x = (-6).dp, y = (-6).dp)
+                                .clickable { launcher.launch("image/*") }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = "更换头像",
+                                tint = Color.White,
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = tempName,
+                        onValueChange = { tempName = it },
+                        label = { Text("昵称") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    saveNickname(tempName)
+                    showDialog = false
+                }) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("取消") }
+            }
         )
     }
 } 
