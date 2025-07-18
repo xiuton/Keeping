@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -159,7 +161,23 @@ fun AddBillScreen(
             // 金额输入框
             OutlinedTextField(
                 value = amount,
-                onValueChange = { amount = it },
+                onValueChange = { input ->
+                    // 只允许数字和小数点，且只允许一个小数点
+                    val filtered = input.replace(Regex("[^\\d.]"), "")
+                    val parts = filtered.split('.')
+                    val newValue = when {
+                        parts.size <= 2 -> {
+                            // 不能以多个0开头
+                            if (parts[0].startsWith("0") && parts[0].length > 1 && !parts[0].startsWith("0.")) {
+                                parts[0].trimStart('0').ifEmpty { "0" } + if (parts.size == 2) ".${parts[1]}" else ""
+                            } else {
+                                filtered
+                            }
+                        }
+                        else -> parts[0] + "." + parts[1]
+                    }
+                    amount = newValue
+                },
                 label = { Text("金额") },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
@@ -173,7 +191,8 @@ fun AddBillScreen(
                 textStyle = LocalTextStyle.current.copy(
                     textAlign = TextAlign.Start,
                     fontSize = 15.sp
-                )
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             // 备注输入框
             OutlinedTextField(

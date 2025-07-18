@@ -37,7 +37,7 @@ fun StatisticsScreen(bills: List<BillItem>) {
             .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 每日收支趋势
         BillBarChart(monthBills)
@@ -171,7 +171,8 @@ fun BillBarChart(bills: List<BillItem>) {
                         // x轴日期标签
                         for (idx in 0 until groupCount) {
                             val label = sortedDays[idx].takeLast(2) + "日"
-                            val x = idx * groupWidth + groupWidth / 2
+                            val groupStart = idx * (groupWidth + groupGapPx)
+                            val x = groupStart + groupWidth / 2
                             drawIntoCanvas { canvas ->
                                 val paint = android.graphics.Paint().apply {
                                     color = android.graphics.Color.GRAY
@@ -255,7 +256,8 @@ fun BillBarChart(bills: List<BillItem>) {
                     // x轴日期标签
                     for (idx in 0 until groupCount) {
                         val label = sortedDays[idx].takeLast(2) + "日"
-                        val x = idx * groupWidth + groupWidth / 2
+                        val groupStart = idx * (groupWidth + groupGapPx)
+                        val x = groupStart + groupWidth / 2
                         drawIntoCanvas { canvas ->
                             val paint = android.graphics.Paint().apply {
                                 color = android.graphics.Color.GRAY
