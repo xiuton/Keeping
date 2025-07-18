@@ -265,7 +265,7 @@ fun MyScreen(
         ) {
             if (bgUri != null && File(bgUri).exists()) {
                 AsyncImage(
-                    model = File(bgUri),
+                    model = File(bgUri!!),
                     contentDescription = "背景图",
                     modifier = Modifier
                         .fillMaxSize()
@@ -302,13 +302,8 @@ fun MyScreen(
                         .clickable { tempName = nickname; showDialog = true },
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
-                    if (avatarUri != null) {
-                        AsyncImage(
-                            model = avatarUri,
-                            contentDescription = "头像",
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
+                    val avatar = avatarUri
+                    if (avatar.isNullOrBlank()) {
                         Icon(
                             imageVector = Icons.Filled.Person,
                             contentDescription = "头像",
@@ -316,6 +311,12 @@ fun MyScreen(
                                 .fillMaxSize()
                                 .padding(12.dp),
                             tint = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        AsyncImage(
+                            model = avatar.toString(),
+                            contentDescription = "头像",
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -401,13 +402,13 @@ fun MyScreen(
                                 .clickable { launcher.launch("image/*") },
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
-                            if (avatarUri != null) {
+                            avatarUri?.let { uri ->
                                 AsyncImage(
-                                    model = avatarUri,
+                                    model = uri,
                                     contentDescription = "头像",
                                     modifier = Modifier.fillMaxSize()
                                 )
-                            } else {
+                            } ?: run {
                                 Icon(
                                     imageVector = Icons.Filled.Person,
                                     contentDescription = "头像",
