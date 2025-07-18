@@ -63,10 +63,10 @@ fun MyScreen(
 
     // 头像持久化
     val AVATAR_URI_KEY = stringPreferencesKey("avatar_uri")
-    var avatarUri by remember { mutableStateOf<String?>(null) }
+    var avatarUri by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         val uri = context.dataStore.data.map { it[AVATAR_URI_KEY] ?: "" }.first()
-        avatarUri = if (uri.isNotBlank()) uri else null
+        avatarUri = uri
     }
     fun saveAvatarUri(uri: String) {
         avatarUri = uri
@@ -302,8 +302,14 @@ fun MyScreen(
                         .clickable { tempName = nickname; showDialog = true },
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
-                    val avatar = avatarUri
-                    if (avatar.isNullOrBlank()) {
+                    @Suppress("INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION_WARNING", "UNCHECKED_CAST")
+                    if (avatarUri.isNotBlank()) {
+                        AsyncImage(
+                            model = avatarUri as Any,
+                            contentDescription = "头像",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
                         Icon(
                             imageVector = Icons.Filled.Person,
                             contentDescription = "头像",
@@ -311,12 +317,6 @@ fun MyScreen(
                                 .fillMaxSize()
                                 .padding(12.dp),
                             tint = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        AsyncImage(
-                            model = avatar.toString(),
-                            contentDescription = "头像",
-                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -402,13 +402,13 @@ fun MyScreen(
                                 .clickable { launcher.launch("image/*") },
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
-                            avatarUri?.let { uri ->
+                            if (avatarUri.isNotBlank()) {
                                 AsyncImage(
-                                    model = uri,
+                                    model = avatarUri,
                                     contentDescription = "头像",
                                     modifier = Modifier.fillMaxSize()
                                 )
-                            } ?: run {
+                            } else {
                                 Icon(
                                     imageVector = Icons.Filled.Person,
                                     contentDescription = "头像",
