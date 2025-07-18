@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,7 +36,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BillHomeScreen(
     bills: List<BillItem>,
@@ -50,8 +56,25 @@ fun BillHomeScreen(
     onSortChange: () -> Unit
 ) {
     var editBill by remember { mutableStateOf<BillItem?>(null) }
-    val listState = rememberLazyListState()
+    var filterDate by remember { mutableStateOf<String?>(null) } // 当前筛选的日期，null为整月
+    var listState: LazyListState by remember(filterDate) { mutableStateOf(LazyListState()) }
     val prevCount = remember { mutableStateOf(bills.size) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showDayPicker by remember { mutableStateOf(false) }
+    val today = Calendar.getInstance()
+    var lastSelectedDay by remember { mutableStateOf(today.get(Calendar.DAY_OF_MONTH)) }
+
+    // 切换月份时自动重置天切换
+    LaunchedEffect(currentYearMonth) {
+        filterDate = null
+        lastSelectedDay = today.get(Calendar.DAY_OF_MONTH)
+    }
+
+    LaunchedEffect(filterDate) {
+        val day = filterDate?.substring(8, 10)?.toIntOrNull()
+        if (day != null) lastSelectedDay = day
+    }
+
     val sortedBills = remember(bills, sortBy) {
         when (sortBy) {
             "create" -> bills.sortedByDescending { it.createTime }
@@ -61,11 +84,18 @@ fun BillHomeScreen(
             else -> bills
         }
     }
-    // 新增：根据当前年月过滤账单
+    // 新增：根据当前年月和筛选日过滤账单
     val filteredBills = sortedBills.filter {
         val year = it.time.substring(0, 4).toIntOrNull()
         val month = it.time.substring(5, 7).toIntOrNull()
-        year == currentYearMonth.first && month == currentYearMonth.second
+        val day = it.time.substring(8, 10).toIntOrNull()
+        val matchMonth = year == currentYearMonth.first && month == currentYearMonth.second
+        if (filterDate == null) {
+            matchMonth
+        } else {
+            val filterDay = filterDate!!.substring(8, 10).toIntOrNull()
+            matchMonth && day == filterDay
+        }
     }
     LaunchedEffect(bills.size) {
         if (bills.isNotEmpty() && bills.size > prevCount.value) {
@@ -73,13 +103,43 @@ fun BillHomeScreen(
         }
         prevCount.value = bills.size
     }
+    // 不再需要LaunchedEffect重置滚动，直接重建listState即可
     val scrollState = rememberScrollState()
+
+    if (showDatePicker) {
+        val today = Calendar.getInstance()
+        val initialDate = filterDate?.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+            } catch (e: Exception) { null }
+        } ?: today.timeInMillis
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance().apply { timeInMillis = millis }
+                        val y = cal.get(Calendar.YEAR)
+                        val m = cal.get(Calendar.MONTH) + 1
+                        val d = cal.get(Calendar.DAY_OF_MONTH)
+                        filterDate = String.format("%04d-%02d-%02d", y, m, d)
+                    }
+                    showDatePicker = false
+                }) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+            },
+            content = { DatePicker(state = pickerState) }
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(24.dp),
+            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // 统计数据定义，确保作用域正确
@@ -154,9 +214,117 @@ fun BillHomeScreen(
                 }
             }
         }
-        Text("账单列表", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
+        // 2. 标题与天切换同行，左右排布
+        val year = currentYearMonth.first
+        val month = currentYearMonth.second
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("账单列表", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            // 整月按钮，选中时主色边框+主色字体+加粗
+            TextButton(
+                onClick = {
+                    if (filterDate == null) {
+                        filterDate = String.format("%04d-%02d-%02d", year, month, lastSelectedDay)
+                    } else {
+                        filterDate = null
+                    }
+                },
+                enabled = true,
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
+                border = if (filterDate == null) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+            ) {
+                Text(
+                    "整月",
+                    fontWeight = if (filterDate == null) FontWeight.Bold else FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            // 日切换控件
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val calendar = remember(year, month) {
+                    Calendar.getInstance().apply {
+                        set(Calendar.YEAR, year)
+                        set(Calendar.MONTH, month - 1)
+                        set(Calendar.DAY_OF_MONTH, 1)
+                    }
+                }
+                val maxDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+                // 左按钮
+                IconButton(
+                    enabled = lastSelectedDay > 1,
+                    onClick = {
+                        if (lastSelectedDay > 1) {
+                            lastSelectedDay -= 1
+                            filterDate = String.format("%04d-%02d-%02d", year, month, lastSelectedDay)
+                        }
+                    }
+                ) {
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "前一天", modifier = Modifier.rotate(90f))
+                }
+                // 日切换按钮，始终高亮，内容为lastSelectedDay
+                TextButton(
+                    onClick = {
+                        showDayPicker = true // 弹出日期选择器
+                    },
+                    enabled = true
+                ) {
+                    Text(
+                        String.format("%02d-%02d", month, lastSelectedDay),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                // 右按钮
+                IconButton(
+                    enabled = lastSelectedDay < maxDay,
+                    onClick = {
+                        if (lastSelectedDay < maxDay) {
+                            lastSelectedDay += 1
+                            filterDate = String.format("%04d-%02d-%02d", year, month, lastSelectedDay)
+                        }
+                    }
+                ) {
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "后一天", modifier = Modifier.rotate(-90f))
+                }
+                // 日期选择器弹窗
+                if (showDayPicker) {
+                    val initialDate = Calendar.getInstance().apply {
+                        set(Calendar.YEAR, year)
+                        set(Calendar.MONTH, month - 1)
+                        set(Calendar.DAY_OF_MONTH, lastSelectedDay)
+                    }.timeInMillis
+                    val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
+                    DatePickerDialog(
+                        onDismissRequest = { showDayPicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                pickerState.selectedDateMillis?.let { millis ->
+                                    val cal = Calendar.getInstance().apply { timeInMillis = millis }
+                                    val y = cal.get(Calendar.YEAR)
+                                    val m = cal.get(Calendar.MONTH) + 1
+                                    val d = cal.get(Calendar.DAY_OF_MONTH)
+                                    lastSelectedDay = d
+                                    filterDate = String.format("%04d-%02d-%02d", y, m, d)
+                                }
+                                showDayPicker = false
+                            }) { Text("确定") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDayPicker = false }) { Text("取消") }
+                        },
+                        content = { DatePicker(state = pickerState) }
+                    )
+                }
+            }
+        }
         LazyColumn(modifier = Modifier.weight(1f), state = listState, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            itemsIndexed(filteredBills, key = { index, _ -> index }) { index, bill ->
+            itemsIndexed(filteredBills, key = { _, bill -> bill.id }) { index, bill ->
                 BillRow(
                     bill = bill,
                     onDelete = { onDelete(bill) },
@@ -229,25 +397,28 @@ fun BillRow(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+                // 备注（上，字体大）
+                if (bill.remark.isNotBlank()) {
+                    Text(
+                        bill.remark,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.height(2.dp))
+                }
+                // 分类和方式（下，字体小）
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         bill.category,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp
+                        fontSize = 13.sp
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         bill.payType,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp
-                    )
-                }
-                if (bill.remark.isNotBlank()) {
-                    Text(
-                        bill.remark,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        maxLines = 1
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -338,8 +509,8 @@ fun AddBillDialog(
         )
     }
     LaunchedEffect(type) {
-        category = categories[0]
-        payType = payTypes[0]
+        if (category !in categories) category = categories[0]
+        if (payType !in payTypes) payType = payTypes[0]
     }
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = MaterialTheme.colorScheme.primary,

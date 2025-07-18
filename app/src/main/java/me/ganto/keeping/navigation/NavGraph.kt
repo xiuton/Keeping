@@ -19,7 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import me.ganto.keeping.feature.bill.AddBillScreen
 import me.ganto.keeping.theme.KeepingTheme
 import me.ganto.keeping.core.model.BillItem
-import me.ganto.keeping.feature.bill.BillChartScreen
+import me.ganto.keeping.feature.bill.StatisticsScreen
 import me.ganto.keeping.feature.bill.BillHomeScreen
 import me.ganto.keeping.feature.settings.SettingsScreen
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -110,8 +110,9 @@ fun NavGraph(
                                             onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
                                         }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
                                     }
-                                    1 -> Text("收支趋势图表", fontWeight = FontWeight.Bold)
+                                    1 -> Text("统计", fontWeight = FontWeight.Bold)
                                     2 -> Text("设置", fontWeight = FontWeight.Bold)
+                                    3 -> Text("我的", fontWeight = FontWeight.Bold)
                                 }
                             },
                             actions = {
@@ -136,7 +137,7 @@ fun NavGraph(
                     bottomBar = {
                         NavigationBar {
                             NavigationBarItem(selected = navIndex == 0, onClick = { setNavIndex(0) }, icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "账单") }, label = { Text("账单") })
-                            NavigationBarItem(selected = navIndex == 1, onClick = { setNavIndex(1) }, icon = { Icon(Icons.Filled.BarChart, contentDescription = "图表") }, label = { Text("图表") })
+                            NavigationBarItem(selected = navIndex == 1, onClick = { setNavIndex(1) }, icon = { Icon(Icons.Filled.BarChart, contentDescription = "统计") }, label = { Text("统计") })
                             NavigationBarItem(selected = false, onClick = { navController.navigate(ROUTE_ADD_BILL) }, icon = { Icon(Icons.Filled.Add, contentDescription = "新增账单") }, label = { Text("新增") })
                             NavigationBarItem(selected = navIndex == 2, onClick = { setNavIndex(2) }, icon = { Icon(Icons.Filled.Settings, contentDescription = "设置") }, label = { Text("设置") })
                             NavigationBarItem(selected = navIndex == 3, onClick = { setNavIndex(3) }, icon = { Icon(Icons.Filled.Person, contentDescription = "我的") }, label = { Text("我的") })
@@ -161,9 +162,9 @@ fun NavGraph(
                                 onYearMonthChange = onYearMonthChange,
                                 onSortChange = { saveSortBy(if (sortBy == "create") "date" else "create") }
                             )
-                            1 -> BillChartScreen(bills = bills)
+                            1 -> StatisticsScreen(bills = bills)
                             2 -> SettingsScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) })
-                            3 -> MyScreen()
+                            3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) })
                         }
                         if (showAddDialog) {
                             // 保留原有弹窗编辑功能

@@ -19,6 +19,7 @@ dependencyResolutionManagement {
         maven { url = uri("https://repo.huaweicloud.com/repository/maven/") }
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

@@ -121,27 +121,22 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(24.dp),
+            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "设置",
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Card {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-            Text("深色模式", fontSize = 16.sp)
-            Switch(checked = isDark, onCheckedChange = onDarkChange)
-            }
-        }
+        // 移除深色模式切换卡片
+        // Card {
+        //     Row(
+        //         modifier = Modifier
+        //             .fillMaxWidth()
+        //             .padding(16.dp),
+        //         verticalAlignment = Alignment.CenterVertically,
+        //         horizontalArrangement = Arrangement.SpaceBetween
+        //     ) {
+        //     Text("深色模式", fontSize = 16.sp)
+        //     Switch(checked = isDark, onCheckedChange = onDarkChange)
+        //     }
+        // }
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("管理类型", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)

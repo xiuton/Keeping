@@ -25,9 +25,31 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import me.ganto.keeping.core.data.dataStore
+import androidx.core.content.FileProvider
+import java.io.File
+import com.yalantis.ucrop.UCrop
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.blur
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import java.io.InputStream
+import java.io.OutputStream
 
 @Composable
-fun MyScreen() {
+fun MyScreen(
+    isDark: Boolean,
+    onDarkChange: (Boolean) -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
@@ -37,7 +59,98 @@ fun MyScreen() {
     val currentVersion = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     } catch (e: Exception) { "1.0.0" }
-    var isDark by remember { mutableStateOf(false) }
+
+    // 头像持久化
+    val AVATAR_URI_KEY = stringPreferencesKey("avatar_uri")
+    var avatarUri by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        val uri = context.dataStore.data.map { it[AVATAR_URI_KEY] ?: "" }.first()
+        avatarUri = if (uri.isNotBlank()) uri else null
+    }
+    fun saveAvatarUri(uri: String) {
+        avatarUri = uri
+        scope.launch {
+            context.dataStore.edit { prefs ->
+                prefs[AVATAR_URI_KEY] = uri
+            }
+        }
+    }
+    // 昵称持久化
+    val NICKNAME_KEY = stringPreferencesKey("nickname")
+    var nickname by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        val name = context.dataStore.data.map { it[NICKNAME_KEY] ?: "未登录" }.first()
+        nickname = name
+    }
+    fun saveNickname(name: String) {
+        nickname = name
+        scope.launch {
+            context.dataStore.edit { prefs ->
+                prefs[NICKNAME_KEY] = name
+            }
+        }
+    }
+    // 裁剪相关
+    var tempCropUri by remember { mutableStateOf<Uri?>(null) }
+    // uCrop裁剪Launcher
+    val cropLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val resultUri = UCrop.getOutput(result.data ?: return@rememberLauncherForActivityResult)
+        resultUri?.let {
+            saveAvatarUri(it.toString())
+        }
+    }
+    // 图片选择器
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            // 生成临时文件用于裁剪输出
+            val cropFile = File(context.cacheDir, "avatar_crop_${System.currentTimeMillis()}.jpg")
+            val cropUri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", cropFile)
+            tempCropUri = cropUri
+            // 配置uCrop
+            val uCrop = UCrop.of(it, cropUri)
+                .withAspectRatio(1f, 1f)
+                .withMaxResultSize(400, 400)
+                .withOptions(UCrop.Options().apply {
+                    setCircleDimmedLayer(true)
+                    setShowCropGrid(false)
+                    setHideBottomControls(true)
+                    setToolbarTitle("裁剪头像")
+                    setToolbarColor(0xFF6C63FF.toInt())
+                    setStatusBarColor(0xFF6C63FF.toInt())
+                })
+            val intent = uCrop.getIntent(context)
+            cropLauncher.launch(intent)
+        }
+    }
+
+    // 背景图持久化
+    val BG_URI_KEY = stringPreferencesKey("my_bg_uri")
+    var bgUri by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        val uri = context.dataStore.data.map { it[BG_URI_KEY] ?: "" }.first()
+        bgUri = if (uri.isNotBlank()) uri else null
+    }
+    fun saveBgUri(uri: String) {
+        bgUri = uri
+        scope.launch {
+            context.dataStore.edit { prefs ->
+                prefs[BG_URI_KEY] = uri
+            }
+        }
+    }
+    // 背景图选择器
+    val bgLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            // 拷贝图片到私有目录
+            val inputStream: InputStream? = context.contentResolver.openInputStream(it)
+            val bgFile = File(context.filesDir, "my_bg_${System.currentTimeMillis()}.jpg")
+            val outputStream: OutputStream = bgFile.outputStream()
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            saveBgUri(bgFile.absolutePath)
+        }
+    }
 
     // 更严谨的版本号比较
     fun isNewerVersion(server: String, local: String): Boolean {
@@ -130,49 +243,95 @@ fun MyScreen() {
         Toast.makeText(context, "正在后台下载更新包，请稍后安装", Toast.LENGTH_LONG).show()
     }
 
+    // 弹窗控制
+    var showDialog by remember { mutableStateOf(false) }
+    var tempName by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.Top
     ) {
-        // 顶部头像和昵称
-        Spacer(Modifier.height(24.dp))
-        Card(
-            shape = CircleShape,
-            modifier = Modifier.size(90.dp),
-            elevation = CardDefaults.cardElevation(4.dp)
+        Spacer(Modifier.height(0.dp))
+        // 顶部区域：背景图+头像昵称叠加
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(16.dp))
         ) {
-            Icon(
-                imageVector = Icons.Filled.Person,
-                contentDescription = "头像",
-                modifier = Modifier
+            if (bgUri != null && File(bgUri).exists()) {
+                AsyncImage(
+                    model = File(bgUri),
+                    contentDescription = "背景图",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(16.dp)
+                        .clickable { bgLauncher.launch("image/*") }
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .clickable { bgLauncher.launch("image/*") }
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("点击添加背景图", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Box(
+                Modifier
                     .fillMaxSize()
-                    .padding(12.dp),
-                tint = MaterialTheme.colorScheme.primary
+                    .background(Color.Black.copy(alpha = 0.18f))
             )
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Card(
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(90.dp)
+                        .clickable { tempName = nickname; showDialog = true },
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    if (avatarUri != null) {
+                        AsyncImage(
+                            model = avatarUri,
+                            contentDescription = "头像",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = "头像",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                Text(nickname, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.clickable { tempName = nickname; showDialog = true }, color = Color.White)
+            }
         }
-        Spacer(Modifier.height(12.dp))
-        Text("未登录", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Spacer(Modifier.height(24.dp))
-
+        Spacer(Modifier.height(16.dp))
         // 账户与设置
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            Column(Modifier.padding(20.dp)) {
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("深色模式", fontSize = 16.sp)
-                    Switch(checked = isDark, onCheckedChange = {
-                        isDark = it
-                        // 你可以在这里同步到全局或DataStore
-                    })
+                    Switch(checked = isDark, onCheckedChange = onDarkChange)
                 }
                 HorizontalDivider(Modifier.padding(vertical = 12.dp))
                 Row(
@@ -188,21 +347,15 @@ fun MyScreen() {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     } else if (updateAvailable) {
                         Text("发现新版本: $latestVersion", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
-                        Spacer(Modifier.width(8.dp))
                         Button(onClick = { downloadAndInstall(updateUrl) }) { Text("下载并安装") }
                     }
                 }
             }
         }
-
-        Spacer(Modifier.height(20.dp))
-
+        Spacer(Modifier.height(16.dp))
         // 关于与帮助
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            Column(Modifier.padding(20.dp)) {
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -216,7 +369,7 @@ fun MyScreen() {
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { Toast.makeText(context, "Keeping 记账App", Toast.LENGTH_SHORT).show() }
+                        .clickable { Toast.makeText(context, "Keeping App Version: $currentVersion", Toast.LENGTH_SHORT).show() }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -224,14 +377,12 @@ fun MyScreen() {
                 }
             }
         }
-
         Spacer(Modifier.weight(1f))
         Text(
-            text = "版本号：$currentVersion",
+            text = "版本号: $currentVersion",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
-        Spacer(Modifier.height(12.dp))
     }
 } 

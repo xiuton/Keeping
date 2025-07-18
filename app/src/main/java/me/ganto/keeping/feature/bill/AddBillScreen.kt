@@ -37,8 +37,12 @@ fun AddBillScreen(
     val categories = if (type == "支出") expenseCategories else incomeCategories
     val payTypes = if (type == "支出") expensePayTypes else incomePayTypes
 
-    var category by remember { mutableStateOf(categories[0]) }
-    var payType by remember { mutableStateOf(payTypes[0]) }
+    var expenseCategory by remember { mutableStateOf(expenseCategories.getOrNull(0) ?: "") }
+    var incomeCategory by remember { mutableStateOf(incomeCategories.getOrNull(0) ?: "") }
+    var expensePayType by remember { mutableStateOf(expensePayTypes.getOrNull(0) ?: "") }
+    var incomePayType by remember { mutableStateOf(incomePayTypes.getOrNull(0) ?: "") }
+    val category = if (type == "支出") expenseCategory else incomeCategory
+    val payType = if (type == "支出") expensePayType else incomePayType
     var remark by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(Date()) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -94,7 +98,9 @@ fun AddBillScreen(
                     Card(
                         modifier = Modifier
                             .widthIn(min = 64.dp, max = 120.dp)
-                            .clickable { category = item },
+                            .clickable {
+                                if (type == "支出") expenseCategory = item else incomeCategory = item
+                            },
                         colors = CardDefaults.cardColors(
                             containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
                         ),
@@ -127,7 +133,9 @@ fun AddBillScreen(
                     Card(
                         modifier = Modifier
                             .widthIn(min = 64.dp, max = 120.dp)
-                            .clickable { payType = item },
+                            .clickable {
+                                if (type == "支出") expensePayType = item else incomePayType = item
+                            },
                         colors = CardDefaults.cardColors(
                             containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
                         ),
