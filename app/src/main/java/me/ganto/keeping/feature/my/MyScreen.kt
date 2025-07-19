@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.painterResource
+import me.ganto.keeping.R
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.first
@@ -278,19 +280,35 @@ fun MyScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .blur(16.dp)
-                        .clickable { bgLauncher.launch("image/*") }
                         .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Box(
-                    Modifier
+                androidx.compose.foundation.Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    contentDescription = "默认背景图",
+                    modifier = Modifier
                         .fillMaxSize()
-                        .clickable { bgLauncher.launch("image/*") }
+                        .blur(16.dp)
                         .clip(RoundedCornerShape(16.dp)),
-                    contentAlignment = Alignment.Center
+                    contentScale = ContentScale.Crop
+                )
+            }
+            // 右上角添加背景图icon按钮
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                IconButton(
+                    onClick = { bgLauncher.launch("image/*") },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
                 ) {
-                    Text("点击添加背景图", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "添加/更换背景图",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             Box(
@@ -343,7 +361,10 @@ fun MyScreen(
                     Text("深色模式", fontSize = 16.sp)
                     Switch(checked = isDark, onCheckedChange = onDarkChange)
                 }
-                HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -375,7 +396,10 @@ fun MyScreen(
                 ) {
                     Text("意见反馈", fontSize = 16.sp)
                 }
-                HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
                 Row(
                     Modifier
                         .fillMaxWidth()

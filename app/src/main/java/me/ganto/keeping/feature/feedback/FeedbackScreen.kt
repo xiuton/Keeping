@@ -21,7 +21,10 @@ fun FeedbackScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
             )
         }
     ) { innerPadding ->

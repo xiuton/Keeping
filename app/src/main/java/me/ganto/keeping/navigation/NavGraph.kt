@@ -136,7 +136,16 @@ fun NavGraph(
                                         }
                                     }
                                 }
-                            }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = when (navIndex) {
+                                    0 -> MaterialTheme.colorScheme.primaryContainer
+                                    1 -> MaterialTheme.colorScheme.tertiaryContainer
+                                    2 -> MaterialTheme.colorScheme.secondaryContainer
+                                    3 -> MaterialTheme.colorScheme.surfaceVariant
+                                    else -> MaterialTheme.colorScheme.surface
+                                }
+                            )
                         )
                     },
                     bottomBar = {

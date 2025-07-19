@@ -7,22 +7,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.ganto.keeping.core.model.BillItem
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.animation.animateContentSize
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -68,11 +75,56 @@ fun AddBillScreen(
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
                 )
-                PrimaryTabRow(selectedTabIndex = tabIndex) {
-                    Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }) { Text("支出") }
-                    Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }) { Text("收入") }
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val tabModifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { tabIndex = 0 }
+                    Box(
+                        modifier = tabModifier
+                            .background(if (tabIndex == 0) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .animateContentSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "支出",
+                            color = if (tabIndex == 0) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (tabIndex == 0) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 16.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    val tabModifier2 = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { tabIndex = 1 }
+                    Box(
+                        modifier = tabModifier2
+                            .background(if (tabIndex == 1) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .animateContentSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "收入",
+                            color = if (tabIndex == 1) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (tabIndex == 1) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
@@ -84,9 +136,8 @@ fun AddBillScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .statusBarsPadding()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // 分类选择平铺
             Text("分类", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
@@ -122,7 +173,6 @@ fun AddBillScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
             // 方式选择平铺
             Text("方式", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             FlowRow(
@@ -157,7 +207,6 @@ fun AddBillScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
             // 金额输入框
             OutlinedTextField(
                 value = amount,
