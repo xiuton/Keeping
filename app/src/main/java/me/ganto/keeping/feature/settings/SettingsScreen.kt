@@ -47,6 +47,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.material.icons.filled.Warning
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -122,6 +123,7 @@ fun SettingsScreen(
     var backupDescription by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var showMessage by remember { mutableStateOf<String?>(null) }
+    var showBackupPathDialog by remember { mutableStateOf(false) }
     
     // 权限请求
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -499,47 +501,19 @@ fun SettingsScreen(
             }
         }
         
-        // 备份路径信息卡片
-        Card {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("备份文件位置", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                val backupPaths = backupManager.getBackupPaths()
-                backupPaths.forEach { (key, path) ->
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = when (key) {
-                                "internal_path" -> "内部存储"
-                                "external_path" -> "外部存储"
-                                "downloads_path" -> "下载文件夹"
-                                else -> key
-                            },
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = path,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "提示：备份文件会同时保存到内部存储和下载文件夹，你可以通过文件管理器访问下载文件夹中的备份文件。",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        
         // 备份管理卡片
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("数据备份", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("数据备份", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { showBackupPathDialog = true }) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Filled.Warning,
+                            contentDescription = "备份文件位置",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // 创建备份按钮
@@ -592,12 +566,8 @@ fun SettingsScreen(
                 if (backupFiles.isNotEmpty()) {
                     Text("备份文件列表", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    
-                    LazyColumn(
-                        modifier = Modifier.heightIn(max = 200.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(backupFiles) { backupFile ->
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        backupFiles.forEach { backupFile ->
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
@@ -637,7 +607,6 @@ fun SettingsScreen(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
-                                        
                                         Row {
                                             IconButton(
                                                 onClick = { showRestoreDialog = backupFile },
@@ -863,5 +832,48 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showBackupPathDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackupPathDialog = false },
+            title = { Text("备份文件位置") },
+            text = {
+                Column {
+                    val backupPaths = backupManager.getBackupPaths()
+                    backupPaths.forEach { (key, path) ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = when (key) {
+                                    "internal_path" -> "内部存储"
+                                    "external_path" -> "外部存储"
+                                    "downloads_path" -> "下载文件夹"
+                                    else -> key
+                                },
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = path,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "提示：备份文件会同时保存到内部存储和下载文件夹，你可以通过文件管理器访问下载文件夹中的备份文件。",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showBackupPathDialog = false }) {
+                    Text("确定")
+                }
+            }
+        )
     }
 } 
