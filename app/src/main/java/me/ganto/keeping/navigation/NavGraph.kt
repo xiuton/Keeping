@@ -32,7 +32,7 @@ import androidx.compose.material3.rememberDatePickerState
 import me.ganto.keeping.feature.my.MyScreen
 import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.feature.feedback.FeedbackScreen
-import me.ganto.keeping.feature.bill.TestScreen
+import me.ganto.keeping.feature.test.TestScreen
 
 const val ROUTE_MAIN = "main"
 const val ROUTE_ADD_BILL = "addBill"

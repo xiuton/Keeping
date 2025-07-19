@@ -257,6 +257,9 @@ fun MyScreen(
     var showFeedbackWeb by remember { mutableStateOf(false) }
     val feedbackUrl = "https://github.com/xiuton/Keeping/issues"
 
+    var testEntryVisible by remember { mutableStateOf(false) }
+    var versionClickCount by remember { mutableStateOf(0) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -411,18 +414,20 @@ fun MyScreen(
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
-        // 测试页面入口板块
-        Card {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { navController.navigate("test") }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("测试页面入口", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        if (testEntryVisible) {
+            Spacer(Modifier.height(16.dp))
+            // 测试页面入口板块
+            Card {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate("test") }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("测试页面入口", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
         }
@@ -431,7 +436,15 @@ fun MyScreen(
             text = "版本号: $currentVersion",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .clickable {
+                    versionClickCount++
+                    if (versionClickCount >= 5) {
+                        testEntryVisible = true
+                        versionClickCount = 0
+                    }
+                }
         )
     }
     // 头像/昵称编辑弹窗
