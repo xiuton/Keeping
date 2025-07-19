@@ -6,14 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +37,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -593,14 +593,31 @@ fun AddBillDialog(
                 // 金额输入
                 OutlinedTextField(
                     value = amount,
-                    onValueChange = { amount = it },
+                    onValueChange = { input ->
+                        // 只允许数字和小数点，且只允许一个小数点
+                        val filtered = input.replace(Regex("[^\\d.]"), "")
+                        val parts = filtered.split('.')
+                        val newValue = when {
+                            parts.size <= 2 -> {
+                                // 不能以多个0开头
+                                if (parts[0].startsWith("0") && parts[0].length > 1 && !parts[0].startsWith("0.")) {
+                                    parts[0].trimStart('0').ifEmpty { "0" } + if (parts.size == 2) ".${parts[1]}" else ""
+                                } else {
+                                    filtered
+                                }
+                            }
+                            else -> parts[0] + "." + parts[1]
+                        }
+                        amount = newValue
+                    },
                     label = { Text("金额") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = textFieldColors,
                     textStyle = LocalTextStyle.current.copy(
                         textAlign = TextAlign.Start
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 // 备注输入
                 OutlinedTextField(

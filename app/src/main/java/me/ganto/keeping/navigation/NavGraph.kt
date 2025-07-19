@@ -31,9 +31,11 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
 import me.ganto.keeping.feature.my.MyScreen
 import me.ganto.keeping.core.data.BackupManager
+import me.ganto.keeping.feature.feedback.FeedbackScreen
 
 const val ROUTE_MAIN = "main"
 const val ROUTE_ADD_BILL = "addBill"
+const val ROUTE_FEEDBACK = "feedback"
 
 @Composable
 fun NavGraph(
@@ -174,7 +176,7 @@ fun NavGraph(
                                 bills = bills,
                                 saveBills = saveBills
                             )
-                            3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) })
+                            3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) }, navController = navController)
                         }
                         if (showAddDialog) {
                             // 保留原有弹窗编辑功能
@@ -207,6 +209,9 @@ fun NavGraph(
                     expensePayTypes = expensePayTypes,
                     incomePayTypes = incomePayTypes
                 )
+            }
+            composable(ROUTE_FEEDBACK) {
+                FeedbackScreen(onBack = { navController.popBackStack() })
             }
         }
     }

@@ -45,11 +45,14 @@ import androidx.compose.ui.draw.clip
 import java.io.InputStream
 import java.io.OutputStream
 import androidx.compose.material.icons.filled.Edit
+import androidx.navigation.NavController
+import me.ganto.keeping.navigation.ROUTE_FEEDBACK
 
 @Composable
 fun MyScreen(
     isDark: Boolean,
-    onDarkChange: (Boolean) -> Unit
+    onDarkChange: (Boolean) -> Unit,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -248,6 +251,10 @@ fun MyScreen(
     var showDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
 
+    // WebView弹窗控制
+    var showFeedbackWeb by remember { mutableStateOf(false) }
+    val feedbackUrl = "https://github.com/xiuton/Keeping/issues"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -263,9 +270,10 @@ fun MyScreen(
                 .height(200.dp)
                 .clip(RoundedCornerShape(16.dp))
         ) {
-            if (bgUri != null && File(bgUri).exists()) {
+            if (bgUri != null && File(bgUri!!).exists()) {
+                val bgFile = File(bgUri!!)
                 AsyncImage(
-                    model = File(bgUri!!),
+                    model = bgFile,
                     contentDescription = "背景图",
                     modifier = Modifier
                         .fillMaxSize()
@@ -361,7 +369,7 @@ fun MyScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { Toast.makeText(context, "敬请期待", Toast.LENGTH_SHORT).show() }
+                        .clickable { navController.navigate(ROUTE_FEEDBACK) }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
