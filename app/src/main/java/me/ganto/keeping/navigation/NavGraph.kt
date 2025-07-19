@@ -32,10 +32,12 @@ import androidx.compose.material3.rememberDatePickerState
 import me.ganto.keeping.feature.my.MyScreen
 import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.feature.feedback.FeedbackScreen
+import me.ganto.keeping.feature.bill.TestScreen
 
 const val ROUTE_MAIN = "main"
 const val ROUTE_ADD_BILL = "addBill"
 const val ROUTE_FEEDBACK = "feedback"
+const val ROUTE_TEST = "test"
 
 @Composable
 fun NavGraph(
@@ -221,6 +223,9 @@ fun NavGraph(
             }
             composable(ROUTE_FEEDBACK) {
                 FeedbackScreen(onBack = { navController.popBackStack() })
+            }
+            composable(ROUTE_TEST) {
+                TestScreen(onBack = { navController.popBackStack() })
             }
         }
     }
