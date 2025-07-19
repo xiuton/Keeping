@@ -31,6 +31,7 @@ import me.ganto.keeping.core.data.PREF_KEY_INC_CAT
 import me.ganto.keeping.core.data.PREF_KEY_EXP_PAY
 import me.ganto.keeping.core.data.PREF_KEY_INC_PAY
 import me.ganto.keeping.core.data.dataStore
+import me.ganto.keeping.core.data.BackupManager
 
 // DataStore扩展
 val BILLS_KEY = stringPreferencesKey("bills_json")
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
             var isDarkLoaded by remember { mutableStateOf(false) }
             var sortBy by remember { mutableStateOf("create") }
             var sortLoaded by remember { mutableStateOf(false) }
+            val backupManager = remember { BackupManager(context) }
             val expenseCategories by context.dataStore.data
                 .map { it[PREF_KEY_EXP_CAT]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他") }
                 .collectAsState(initial = listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他"))
@@ -112,6 +114,18 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            
+            // 收集所有设置数据用于备份
+            fun collectSettingsData(): Map<String, String> {
+                return mapOf(
+                    "expense_categories" to gson.toJson(expenseCategories),
+                    "income_categories" to gson.toJson(incomeCategories),
+                    "expense_pay_types" to gson.toJson(expensePayTypes),
+                    "income_pay_types" to gson.toJson(incomePayTypes),
+                    "is_dark" to isDark.toString(),
+                    "sort_by" to sortBy
+                )
+            }
             if (!isLoaded || !isDarkLoaded || !sortLoaded || !catPayLoaded) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -133,7 +147,9 @@ class MainActivity : ComponentActivity() {
                     navIndex = navIndex,
                     setNavIndex = { navIndex = it },
                     showAddDialog = showAddDialog,
-                    setShowAddDialog = { showAddDialog = it }
+                    setShowAddDialog = { showAddDialog = it },
+                    backupManager = backupManager,
+                    collectSettingsData = ::collectSettingsData
                 )
             }
         }

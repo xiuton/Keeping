@@ -30,6 +30,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
 import me.ganto.keeping.feature.my.MyScreen
+import me.ganto.keeping.core.data.BackupManager
 
 const val ROUTE_MAIN = "main"
 const val ROUTE_ADD_BILL = "addBill"
@@ -49,7 +50,9 @@ fun NavGraph(
     navIndex: Int,
     setNavIndex: (Int) -> Unit,
     showAddDialog: Boolean,
-    setShowAddDialog: (Boolean) -> Unit
+    setShowAddDialog: (Boolean) -> Unit,
+    backupManager: BackupManager,
+    collectSettingsData: () -> Map<String, String>
 ) {
     val navController = rememberNavController()
     // Add state for currentYearMonth as Pair<Int, Int>
@@ -163,7 +166,14 @@ fun NavGraph(
                                 onSortChange = { saveSortBy(if (sortBy == "create") "date" else "create") }
                             )
                             1 -> StatisticsScreen(bills = bills)
-                            2 -> SettingsScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) })
+                            2 -> SettingsScreen(
+                                isDark = isDark, 
+                                onDarkChange = { saveDarkMode(it) },
+                                backupManager = backupManager,
+                                collectSettingsData = collectSettingsData,
+                                bills = bills,
+                                saveBills = saveBills
+                            )
                             3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) })
                         }
                         if (showAddDialog) {
