@@ -139,7 +139,7 @@ fun BillHomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // 统计数据定义，确保作用域正确

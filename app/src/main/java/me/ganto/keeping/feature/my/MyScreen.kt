@@ -261,7 +261,7 @@ fun MyScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.Top
     ) {
         Spacer(Modifier.height(0.dp))

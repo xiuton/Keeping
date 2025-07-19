@@ -36,7 +36,7 @@ fun StatisticsScreen(bills: List<BillItem>) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 每日收支趋势
