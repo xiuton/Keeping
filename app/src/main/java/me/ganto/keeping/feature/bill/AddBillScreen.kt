@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.style.TextAlign
@@ -30,6 +31,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.animation.animateContentSize
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import androidx.compose.ui.platform.LocalContext
+import me.ganto.keeping.core.data.dataStore
+import kotlinx.coroutines.launch
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.compose.foundation.BorderStroke
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -41,17 +51,55 @@ fun AddBillScreen(
     expensePayTypes: List<String>,
     incomePayTypes: List<String>
 ) {
-    var tabIndex by remember { mutableStateOf(0) } // 0: 支出, 1: 收入
+    val context = LocalContext.current
+    val TAB_INDEX_KEY = intPreferencesKey("add_bill_tab_index")
+    val EXP_CAT_KEY = stringPreferencesKey("add_bill_expense_category")
+    val INC_CAT_KEY = stringPreferencesKey("add_bill_income_category")
+    val EXP_PAY_KEY = stringPreferencesKey("add_bill_expense_paytype")
+    val INC_PAY_KEY = stringPreferencesKey("add_bill_income_paytype")
+    val scope = rememberCoroutineScope()
+    var tabIndex by remember { mutableStateOf(0) }
+    // 恢复上次tabIndex
+    LaunchedEffect(Unit) {
+        val saved = context.dataStore.data.map { it[TAB_INDEX_KEY] ?: 0 }.first()
+        tabIndex = saved
+    }
+    // 只更新本地状态
+    fun selectTab(index: Int) {
+        tabIndex = index
+    }
     val type = if (tabIndex == 0) "支出" else "收入"
-    val categories = if (type == "支出") expenseCategories else incomeCategories
-    val payTypes = if (type == "支出") expensePayTypes else incomePayTypes
-
+    // 记忆分类和方式
     var expenseCategory by remember { mutableStateOf(expenseCategories.getOrNull(0) ?: "") }
     var incomeCategory by remember { mutableStateOf(incomeCategories.getOrNull(0) ?: "") }
     var expensePayType by remember { mutableStateOf(expensePayTypes.getOrNull(0) ?: "") }
     var incomePayType by remember { mutableStateOf(incomePayTypes.getOrNull(0) ?: "") }
+    // 恢复上次选择
+    LaunchedEffect(expenseCategories) {
+        val saved = context.dataStore.data.map { it[EXP_CAT_KEY] }.first()
+        if (!saved.isNullOrBlank() && expenseCategories.contains(saved)) expenseCategory = saved
+    }
+    LaunchedEffect(incomeCategories) {
+        val saved = context.dataStore.data.map { it[INC_CAT_KEY] }.first()
+        if (!saved.isNullOrBlank() && incomeCategories.contains(saved)) incomeCategory = saved
+    }
+    LaunchedEffect(expensePayTypes) {
+        val saved = context.dataStore.data.map { it[EXP_PAY_KEY] }.first()
+        if (!saved.isNullOrBlank() && expensePayTypes.contains(saved)) expensePayType = saved
+    }
+    LaunchedEffect(incomePayTypes) {
+        val saved = context.dataStore.data.map { it[INC_PAY_KEY] }.first()
+        if (!saved.isNullOrBlank() && incomePayTypes.contains(saved)) incomePayType = saved
+    }
+    // 只更新本地状态
+    fun selectExpenseCategory(cat: String) { expenseCategory = cat }
+    fun selectIncomeCategory(cat: String) { incomeCategory = cat }
+    fun selectExpensePayType(pay: String) { expensePayType = pay }
+    fun selectIncomePayType(pay: String) { incomePayType = pay }
     val category = if (type == "支出") expenseCategory else incomeCategory
     val payType = if (type == "支出") expensePayType else incomePayType
+    val categories = if (type == "支出") expenseCategories else incomeCategories
+    val payTypes = if (type == "支出") expensePayTypes else incomePayTypes
     var remark by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(Date()) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -92,7 +140,7 @@ fun AddBillScreen(
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { tabIndex = 0 }
+                        .clickable { selectTab(0) }
                     Box(
                         modifier = tabModifier
                             .background(if (tabIndex == 0) MaterialTheme.colorScheme.primary else Color.Transparent)
@@ -111,7 +159,7 @@ fun AddBillScreen(
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { tabIndex = 1 }
+                        .clickable { selectTab(1) }
                     Box(
                         modifier = tabModifier2
                             .background(if (tabIndex == 1) MaterialTheme.colorScheme.primary else Color.Transparent)
@@ -152,12 +200,13 @@ fun AddBillScreen(
                         modifier = Modifier
                             .widthIn(min = 64.dp, max = 120.dp)
                             .clickable {
-                                if (type == "支出") expenseCategory = item else incomeCategory = item
+                                if (type == "支出") selectExpenseCategory(item) else selectIncomeCategory(item)
                             },
                         colors = CardDefaults.cardColors(
                             containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp)
+                        elevation = CardDefaults.cardElevation(0.dp),
+                        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                     ) {
                         Box(
                             modifier = Modifier
@@ -186,12 +235,13 @@ fun AddBillScreen(
                         modifier = Modifier
                             .widthIn(min = 64.dp, max = 120.dp)
                             .clickable {
-                                if (type == "支出") expensePayType = item else incomePayType = item
+                                if (type == "支出") selectExpensePayType(item) else selectIncomePayType(item)
                             },
                         colors = CardDefaults.cardColors(
                             containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp)
+                        elevation = CardDefaults.cardElevation(0.dp),
+                        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                     ) {
                         Box(
                             modifier = Modifier
@@ -263,9 +313,51 @@ fun AddBillScreen(
                 )
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("日期：${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)}")
-                Spacer(Modifier.width(8.dp))
-                Button(onClick = { showDatePicker = true }) { Text("选择日期") }
+                Text(
+                    text = "日期：",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                )
+                IconButton(onClick = {
+                    // 向前一天
+                    val cal = Calendar.getInstance().apply { time = date }
+                    cal.add(Calendar.DAY_OF_MONTH, -1)
+                    date = cal.time
+                }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前一天")
+                }
+                Text(
+                    text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date),
+                    modifier = Modifier
+                        .clickable { showDatePicker = true }
+                        .padding(horizontal = 8.dp),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                )
+                IconButton(onClick = {
+                    // 向后一天
+                    val cal = Calendar.getInstance().apply { time = date }
+                    cal.add(Calendar.DAY_OF_MONTH, 1)
+                    date = cal.time
+                }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "后一天")
+                }
+            }
+            if (showDatePicker) {
+                val pickerState = rememberDatePickerState(initialSelectedDateMillis = date.time)
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            pickerState.selectedDateMillis?.let { date = Date(it) }
+                            showDatePicker = false
+                        }) { Text("确定") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                    },
+                    content = { DatePicker(state = pickerState) }
+                )
             }
             Button(
                 onClick = {
@@ -274,6 +366,19 @@ fun AddBillScreen(
                         val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
                         val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
                         val realAmount = if (type == "支出") -amt else amt
+                        // 保存tabIndex、分类、方式到DataStore
+                        scope.launch {
+                            context.dataStore.edit { prefs ->
+                                prefs[TAB_INDEX_KEY] = tabIndex
+                                if (type == "支出") {
+                                    prefs[EXP_CAT_KEY] = expenseCategory
+                                    prefs[EXP_PAY_KEY] = expensePayType
+                                } else {
+                                    prefs[INC_CAT_KEY] = incomeCategory
+                                    prefs[INC_PAY_KEY] = incomePayType
+                                }
+                            }
+                        }
                         onAdd(
                             BillItem(
                                 category = category,
@@ -287,22 +392,6 @@ fun AddBillScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) { Text("保存") }
-        }
-        if (showDatePicker) {
-            val pickerState = rememberDatePickerState(initialSelectedDateMillis = date.time)
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        pickerState.selectedDateMillis?.let { date = Date(it) }
-                        showDatePicker = false
-                    }) { Text("确定") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("取消") }
-                },
-                content = { DatePicker(state = pickerState) }
-            )
         }
     }
 } 
