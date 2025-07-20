@@ -3,7 +3,6 @@ package me.ganto.keeping.feature.settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -44,6 +43,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.foundation.layout.FlowRow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,10 +68,10 @@ fun SettingsScreen(
     val data by context.dataStore.data.collectAsState(initial = emptyPreferences())
 
     // 正确的默认值
-    val defaultExpenseCategories = listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他")
-    val defaultIncomeCategories = listOf("工资", "转账", "理财", "其他")
-    val defaultExpensePayTypes = listOf("支付宝", "微信", "现金", "银行卡", "其他")
-    val defaultIncomePayTypes = listOf("工资", "转账", "理财", "其他")
+    val defaultExpenseCategories = listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他") // 支出分类
+    val defaultExpensePayTypes = listOf("支付宝", "微信", "现金", "银行卡", "其他") // 支出方式
+    val defaultIncomeCategories = listOf("工资", "买卖", "理财", "其他") // 收入分类
+    val defaultIncomePayTypes = listOf("银行卡", "支付宝", "微信", "其他") // 收入方式
 
     val expenseCategories = remember(data) {
         data[PREF_KEY_EXP_CAT]?.let {
@@ -340,50 +346,111 @@ fun SettingsScreen(
     }
 }
                 Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    currentCategories.forEach { category ->
-                        val selected = false // 设置页不需要选中高亮
-                        Card(
-                            modifier = Modifier
-                                .widthIn(min = 64.dp, max = 120.dp)
-                                .clickable {
-                                    showEditDialog = "category" to category
-                                    editText = category
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
-                            ),
-                            elevation = CardDefaults.cardElevation(0.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                val chunkedCategories = currentCategories.chunked(4)
+                chunkedCategories.forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowItems.forEach { category ->
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(2.dp)
+                                    .defaultMinSize(minHeight = 80.dp)
+                                    .clickable {
+                                        showEditDialog = "category" to category
+                                        editText = category
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                                ),
+                                elevation = CardDefaults.cardElevation(0.dp)
                             ) {
-                                Text(
-                                    text = category,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 15.sp,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                if (currentCategories.size > 1) {
-                                    IconButton(
-                                        onClick = { showDeleteDialog = "category" to category },
-                                        modifier = Modifier.size(18.dp)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = category,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 15.sp,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = "删除",
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
+                                        IconButton(
+                                            onClick = {
+                                                val idx = currentCategories.indexOf(category)
+                                                if (idx > 0) {
+                                                    val newList = currentCategories.toMutableList()
+                                                    newList.removeAt(idx)
+                                                    newList.add(idx - 1, category)
+                                                    saveCategories(newList)
+                                                }
+                                            },
+                                            enabled = currentCategories.indexOf(category) > 0,
+                                            modifier = Modifier.size(22.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowUpward,
+                                                contentDescription = "上移",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                val idx = currentCategories.indexOf(category)
+                                                if (idx < currentCategories.size - 1) {
+                                                    val newList = currentCategories.toMutableList()
+                                                    newList.removeAt(idx)
+                                                    newList.add(idx + 1, category)
+                                                    saveCategories(newList)
+                                                }
+                                            },
+                                            enabled = currentCategories.indexOf(category) < currentCategories.size - 1,
+                                            modifier = Modifier.size(22.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowDownward,
+                                                contentDescription = "下移",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    if (currentCategories.size > 1) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            IconButton(
+                                                onClick = { showDeleteDialog = "category" to category },
+                                                modifier = Modifier.size(22.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "删除",
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
+                        }
+                        repeat(4 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -434,50 +501,111 @@ fun SettingsScreen(
     }
 }
                 Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    currentPayTypes.forEach { payType ->
-                        val selected = false // 设置页不需要选中高亮
-                        Card(
-                            modifier = Modifier
-                                .widthIn(min = 64.dp, max = 120.dp)
-                                .clickable {
-                                    showEditDialog = "payType" to payType
-                                    editText = payType
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
-                            ),
-                            elevation = CardDefaults.cardElevation(0.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                val chunkedPayTypes = currentPayTypes.chunked(4)
+                chunkedPayTypes.forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowItems.forEach { payType ->
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(2.dp)
+                                    .defaultMinSize(minHeight = 80.dp)
+                                    .clickable {
+                                        showEditDialog = "payType" to payType
+                                        editText = payType
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                                ),
+                                elevation = CardDefaults.cardElevation(0.dp)
                             ) {
-                                Text(
-                                    text = payType,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 15.sp,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                if (currentPayTypes.size > 1) {
-                                    IconButton(
-                                        onClick = { showDeleteDialog = "payType" to payType },
-                                        modifier = Modifier.size(18.dp)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = payType,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 15.sp,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = "删除",
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
+                                        IconButton(
+                                            onClick = {
+                                                val idx = currentPayTypes.indexOf(payType)
+                                                if (idx > 0) {
+                                                    val newList = currentPayTypes.toMutableList()
+                                                    newList.removeAt(idx)
+                                                    newList.add(idx - 1, payType)
+                                                    savePayTypes(newList)
+                                                }
+                                            },
+                                            enabled = currentPayTypes.indexOf(payType) > 0,
+                                            modifier = Modifier.size(22.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowUpward,
+                                                contentDescription = "上移",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                val idx = currentPayTypes.indexOf(payType)
+                                                if (idx < currentPayTypes.size - 1) {
+                                                    val newList = currentPayTypes.toMutableList()
+                                                    newList.removeAt(idx)
+                                                    newList.add(idx + 1, payType)
+                                                    savePayTypes(newList)
+                                                }
+                                            },
+                                            enabled = currentPayTypes.indexOf(payType) < currentPayTypes.size - 1,
+                                            modifier = Modifier.size(22.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.ArrowDownward,
+                                                contentDescription = "下移",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                    if (currentPayTypes.size > 1) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            IconButton(
+                                                onClick = { showDeleteDialog = "payType" to payType },
+                                                modifier = Modifier.size(22.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "删除",
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
+                        }
+                        repeat(4 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -491,9 +619,9 @@ fun SettingsScreen(
                     Text("数据备份", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
                     IconButton(onClick = { showBackupPathDialog = true }) {
                         Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Filled.Warning,
+                            imageVector = Icons.Filled.Info,
                             contentDescription = "备份文件位置",
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

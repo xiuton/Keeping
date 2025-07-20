@@ -40,6 +40,9 @@ import me.ganto.keeping.core.data.dataStore
 import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -189,16 +192,21 @@ fun AddBillScreen(
         ) {
             // 分类选择平铺
             Text("分类", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            FlowRow(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp),
+                userScrollEnabled = false,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                categories.forEach { item ->
+                items(categories) { item ->
                     val selected = item == category
                     Card(
                         modifier = Modifier
-                            .widthIn(min = 64.dp, max = 120.dp)
+                            .fillMaxWidth()
+                            .aspectRatio(1.8f)
                             .clickable {
                                 if (type == "支出") selectExpenseCategory(item) else selectIncomeCategory(item)
                             },
@@ -210,13 +218,17 @@ fun AddBillScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = item,
                                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
                             )
                         }
                     }
@@ -224,16 +236,21 @@ fun AddBillScreen(
             }
             // 方式选择平铺
             Text("方式", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            FlowRow(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 120.dp),
+                userScrollEnabled = false,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                payTypes.forEach { item ->
+                items(payTypes) { item ->
                     val selected = item == payType
                     Card(
                         modifier = Modifier
-                            .widthIn(min = 64.dp, max = 120.dp)
+                            .fillMaxWidth()
+                            .aspectRatio(1.8f)
                             .clickable {
                                 if (type == "支出") selectExpensePayType(item) else selectIncomePayType(item)
                             },
@@ -245,13 +262,17 @@ fun AddBillScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = item,
                                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 15.sp,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
                             )
                         }
                     }
@@ -289,7 +310,7 @@ fun AddBillScreen(
                 ),
                 textStyle = LocalTextStyle.current.copy(
                     textAlign = TextAlign.Start,
-                    fontSize = 15.sp
+                    fontSize = 20.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
