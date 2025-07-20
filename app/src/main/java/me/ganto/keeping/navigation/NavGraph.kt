@@ -26,9 +26,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.clickable
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.rememberDatePickerState
 import me.ganto.keeping.feature.my.MyScreen
 import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.feature.feedback.FeedbackScreen
@@ -90,28 +87,77 @@ fun NavGraph(
                 }
             }
         }
-        // 日期选择弹窗（全局放在Scaffold外层）
+        // 年月选择弹窗（全局放在Scaffold外层）
         if (showDatePicker) {
-            val pickerState = rememberDatePickerState(
-                initialSelectedDateMillis = try {
-                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).parse("${currentYearMonth.value.first}-${currentYearMonth.value.second.toString().padStart(2, '0')}-01")?.time
-                } catch (e: Exception) { null }
-            )
-            DatePickerDialog(
+            var selectedYear by remember { mutableStateOf(currentYearMonth.value.first) }
+            var selectedMonth by remember { mutableStateOf(currentYearMonth.value.second) }
+            
+            AlertDialog(
                 onDismissRequest = { showDatePicker = false },
+                title = { Text("选择年月", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // 年份选择
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("年份:", fontWeight = FontWeight.Medium, modifier = Modifier.width(60.dp))
+                            IconButton(onClick = { selectedYear-- }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上一年")
+                            }
+                            Text(
+                                text = selectedYear.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
+                            )
+                            IconButton(onClick = { selectedYear++ }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下一年")
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // 月份选择
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("月份:", fontWeight = FontWeight.Medium, modifier = Modifier.width(60.dp))
+                            IconButton(onClick = { 
+                                selectedMonth = if (selectedMonth == 1) 12 else selectedMonth - 1 
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月")
+                            }
+                            Text(
+                                text = selectedMonth.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
+                            )
+                            IconButton(onClick = { 
+                                selectedMonth = if (selectedMonth == 12) 1 else selectedMonth + 1 
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月")
+                            }
+                        }
+                    }
+                },
                 confirmButton = {
                     TextButton(onClick = {
-                        pickerState.selectedDateMillis?.let { millis ->
-                            val cal = java.util.Calendar.getInstance().apply { timeInMillis = millis }
-                            onYearMonthChange(Pair(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1))
-                        }
+                        onYearMonthChange(Pair(selectedYear, selectedMonth))
                         showDatePicker = false
                     }) { Text("确定") }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDatePicker = false }) { Text("取消") }
-                },
-                content = { DatePicker(state = pickerState) }
+                }
             )
         }
         Box(Modifier.fillMaxSize()) {

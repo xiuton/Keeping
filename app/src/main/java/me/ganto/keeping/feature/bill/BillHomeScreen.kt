@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -59,7 +62,6 @@ fun BillHomeScreen(
     var filterDate by remember { mutableStateOf<String?>(null) } // 当前筛选的日期，null为整月
     var listState: LazyListState by remember(filterDate) { mutableStateOf(LazyListState()) }
     val prevCount = remember { mutableStateOf(bills.size) }
-    var showDatePicker by remember { mutableStateOf(false) }
     var showDayPicker by remember { mutableStateOf(false) }
     val today = Calendar.getInstance()
     var lastSelectedDay by remember { mutableStateOf(today.get(Calendar.DAY_OF_MONTH)) }
@@ -105,35 +107,6 @@ fun BillHomeScreen(
     }
     // 不再需要LaunchedEffect重置滚动，直接重建listState即可
     val scrollState = rememberScrollState()
-
-    if (showDatePicker) {
-        val today = Calendar.getInstance()
-        val initialDate = filterDate?.let {
-            try {
-                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
-            } catch (e: Exception) { null }
-        } ?: today.timeInMillis
-        val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { millis ->
-                        val cal = Calendar.getInstance().apply { timeInMillis = millis }
-                        val y = cal.get(Calendar.YEAR)
-                        val m = cal.get(Calendar.MONTH) + 1
-                        val d = cal.get(Calendar.DAY_OF_MONTH)
-                        filterDate = String.format("%04d-%02d-%02d", y, m, d)
-                    }
-                    showDatePicker = false
-                }) { Text("确定") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
-            },
-            content = { DatePicker(state = pickerState) }
-        )
-    }
 
     Column(
         modifier = Modifier
@@ -294,31 +267,104 @@ fun BillHomeScreen(
                 }
                 // 日期选择器弹窗
                 if (showDayPicker) {
-                    val initialDate = Calendar.getInstance().apply {
-                        set(Calendar.YEAR, year)
-                        set(Calendar.MONTH, month - 1)
-                        set(Calendar.DAY_OF_MONTH, lastSelectedDay)
-                    }.timeInMillis
-                    val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
-                    DatePickerDialog(
+                    var selectedDay by remember { mutableStateOf(lastSelectedDay) }
+                    val calendar = remember(year, month) {
+                        Calendar.getInstance().apply {
+                            set(Calendar.YEAR, year)
+                            set(Calendar.MONTH, month - 1)
+                            set(Calendar.DAY_OF_MONTH, 1)
+                        }
+                    }
+                    val maxDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    
+                    AlertDialog(
                         onDismissRequest = { showDayPicker = false },
+                        title = { Text("选择日期", fontWeight = FontWeight.Bold) },
+                        text = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${year}年${month}月",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                
+                                // 日期选择网格
+                                LazyVerticalGrid(
+                                    columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(7),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.height(200.dp)
+                                ) {
+                                    // 星期标题
+                                    items(7) { dayOfWeek ->
+                                        val dayNames = listOf("日", "一", "二", "三", "四", "五", "六")
+                                        Text(
+                                            text = dayNames[dayOfWeek],
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.padding(vertical = 4.dp)
+                                        )
+                                    }
+                                    
+                                    // 填充前面的空白
+                                    val firstDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK) - 1
+                                    items(firstDayOfWeek) {
+                                        Box(modifier = Modifier.size(32.dp))
+                                    }
+                                    
+                                    // 日期按钮
+                                    items(maxDay) { day ->
+                                        val dayNumber = day + 1
+                                        val isSelected = dayNumber == selectedDay
+                                        val isToday = dayNumber == today.get(Calendar.DAY_OF_MONTH) && 
+                                                    year == today.get(Calendar.YEAR) && 
+                                                    month == today.get(Calendar.MONTH) + 1
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .background(
+                                                    when {
+                                                        isSelected -> MaterialTheme.colorScheme.primary
+                                                        isToday -> MaterialTheme.colorScheme.primaryContainer
+                                                        else -> Color.Transparent
+                                                    },
+                                                    shape = CircleShape
+                                                )
+                                                .clickable { selectedDay = dayNumber },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = dayNumber.toString(),
+                                                fontSize = 14.sp,
+                                                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                                color = when {
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimary
+                                                    isToday -> MaterialTheme.colorScheme.primary
+                                                    else -> MaterialTheme.colorScheme.onSurface
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         confirmButton = {
                             TextButton(onClick = {
-                                pickerState.selectedDateMillis?.let { millis ->
-                                    val cal = Calendar.getInstance().apply { timeInMillis = millis }
-                                    val y = cal.get(Calendar.YEAR)
-                                    val m = cal.get(Calendar.MONTH) + 1
-                                    val d = cal.get(Calendar.DAY_OF_MONTH)
-                                    lastSelectedDay = d
-                                    filterDate = String.format("%04d-%02d-%02d", y, m, d)
-                                }
+                                lastSelectedDay = selectedDay
+                                filterDate = String.format("%04d-%02d-%02d", year, month, selectedDay)
                                 showDayPicker = false
                             }) { Text("确定") }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDayPicker = false }) { Text("取消") }
-                        },
-                        content = { DatePicker(state = pickerState) }
+                        }
                     )
                 }
             }
