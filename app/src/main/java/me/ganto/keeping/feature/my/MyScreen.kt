@@ -355,100 +355,100 @@ fun MyScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
         ) {
+        Spacer(Modifier.height(16.dp))
+        // 账户与设置
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("深色模式", fontSize = 16.sp)
+                    Switch(checked = isDark, onCheckedChange = onDarkChange)
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { checkUpdate() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("检查更新", fontSize = 16.sp)
+                    if (checking) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    } else if (updateAvailable) {
+                        Text("发现新版本: $latestVersion", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+                        Button(onClick = { downloadAndInstall(updateUrl) }) { Text("下载并安装") }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        // 关于与帮助
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate(ROUTE_FEEDBACK) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("意见反馈", fontSize = 16.sp)
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { Toast.makeText(context, "Keeping App Version: $currentVersion", Toast.LENGTH_SHORT).show() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("关于App", fontSize = 16.sp)
+                }
+            }
+        }
+        if (testEntryVisible) {
             Spacer(Modifier.height(16.dp))
-            // 账户与设置
+            // 测试页面入口板块
             Card {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("深色模式", fontSize = 16.sp)
-                        Switch(checked = isDark, onCheckedChange = onDarkChange)
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable { checkUpdate() }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("检查更新", fontSize = 16.sp)
-                        if (checking) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        } else if (updateAvailable) {
-                            Text("发现新版本: $latestVersion", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
-                            Button(onClick = { downloadAndInstall(updateUrl) }) { Text("下载并安装") }
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            // 关于与帮助
-            Card {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { navController.navigate(ROUTE_FEEDBACK) }
+                            .clickable { navController.navigate("test") }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("意见反馈", fontSize = 16.sp)
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { Toast.makeText(context, "Keeping App Version: $currentVersion", Toast.LENGTH_SHORT).show() }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("关于App", fontSize = 16.sp)
+                        Text("测试页面入口", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
-            if (testEntryVisible) {
-                Spacer(Modifier.height(16.dp))
-                // 测试页面入口板块
-                Card {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { navController.navigate("test") }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("测试页面入口", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        }
+        }
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = "版本号: $currentVersion",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .clickable {
+                    versionClickCount++
+                    if (versionClickCount >= 5) {
+                        testEntryVisible = true
+                        versionClickCount = 0
                     }
                 }
-            }
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = "版本号: $currentVersion",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .clickable {
-                        versionClickCount++
-                        if (versionClickCount >= 5) {
-                            testEntryVisible = true
-                            versionClickCount = 0
-                        }
-                    }
-            )
+        )
         }
     }
     // 头像/昵称编辑弹窗

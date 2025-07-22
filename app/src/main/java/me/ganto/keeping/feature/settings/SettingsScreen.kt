@@ -51,6 +51,8 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.foundation.layout.FlowRow
 import me.ganto.keeping.core.data.DefaultValues
+import android.net.Uri
+import java.io.InputStream
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -121,6 +123,8 @@ fun SettingsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showMessage by remember { mutableStateOf<String?>(null) }
     var showBackupPathDialog by remember { mutableStateOf(false) }
+    var showImporting by remember { mutableStateOf(false) }
+    var importError by remember { mutableStateOf<String?>(null) }
     
     // 权限请求
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -267,6 +271,37 @@ fun SettingsScreen(
                 }
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            scope.launch {
+                showImporting = true
+                importError = null
+                val result = backupManager.importBackupFromJsonUri(context, it)
+                result.onSuccess { (restoredBills, restoredSettings) ->
+                    saveBills(restoredBills)
+                    // 恢复设置数据
+                    context.dataStore.edit { prefs ->
+                        restoredSettings.forEach { (key, value) ->
+                            when (key) {
+                                "expense_categories" -> prefs[PREF_KEY_EXP_CAT] = value
+                                "income_categories" -> prefs[PREF_KEY_INC_CAT] = value
+                                "expense_pay_types" -> prefs[PREF_KEY_EXP_PAY] = value
+                                "income_pay_types" -> prefs[PREF_KEY_INC_PAY] = value
+                                "is_dark" -> prefs[booleanPreferencesKey("is_dark")] = value.toBoolean()
+                                "sort_by" -> prefs[stringPreferencesKey("sort_by")] = value
+                            }
+                        }
+                    }
+                    showMessage = "JSON恢复成功"
+                }.onFailure { error ->
+                    importError = error.message
+                    showMessage = "JSON恢复失败: ${error.message}"
+                }
+                showImporting = false
             }
         }
     }
@@ -632,6 +667,27 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("创建备份")
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                // 新增：从JSON文件恢复按钮
+                OutlinedButton(
+                    onClick = { importLauncher.launch("application/json") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading && !showImporting
+                ) {
+                    Icon(Icons.Default.Restore, contentDescription = "从JSON恢复")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("从JSON文件恢复")
+                }
+                if (showImporting) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("正在导入JSON...", fontSize = 13.sp)
+                    }
+                }
+                if (importError != null) {
+                    Text(importError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                }
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
@@ -950,12 +1006,7 @@ fun SettingsScreen(
                     backupPaths.forEach { (key, path) ->
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = when (key) {
-                                    "internal_path" -> "内部存储"
-                                    "external_path" -> "外部存储"
-                                    "downloads_path" -> "下载文件夹"
-                                    else -> key
-                                },
+                                text = "内部存储（仅本App可见）",
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             )
@@ -969,7 +1020,7 @@ fun SettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "提示：备份文件会同时保存到内部存储和下载文件夹，你可以通过文件管理器访问下载文件夹中的备份文件。",
+                        text = "提示：备份文件仅保存在本App的私有目录（/Android/data/me.ganto.keeping/files/backups），部分文件管理器在Android 11及以上无法直接访问。如需导出请使用导出/分享功能。",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

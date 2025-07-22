@@ -167,49 +167,49 @@ fun NavGraph(
                     Scaffold(
                         topBar = {
                             if (navIndex != 3) {
-                                TopAppBar(
-                                    title = {
-                                        when (navIndex) {
-                                            0 -> Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.fillMaxWidth()
+                            TopAppBar(
+                                title = {
+                                    when (navIndex) {
+                                        0 -> Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            IconButton(onClick = {
+                                                val (y, m) = currentYearMonth.value
+                                                onYearMonthChange(if (m == 1) Pair(y - 1, 12) else Pair(y, m - 1))
+                                            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月") }
+                                            Text(
+                                                text = "${currentYearMonth.value.first}年${currentYearMonth.value.second}月",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 20.sp,
+                                                modifier = Modifier.clickable { showDatePicker = true },
+                                                textAlign = TextAlign.Center
+                                            )
+                                            IconButton(onClick = {
+                                                val (y, m) = currentYearMonth.value
+                                                onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
+                                            }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
+                                        }
+                                        1 -> Text("统计", fontWeight = FontWeight.Bold)
+                                        2 -> Text("设置", fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                actions = {
+                                    if (navIndex == 0) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text("排序:", fontSize = 14.sp)
+                                            Spacer(Modifier.width(4.dp))
+                                            Button(
+                                                onClick = { saveSortBy(if (sortBy == "create") "date" else "create") },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                                modifier = Modifier
+                                                    .height(32.dp)
+                                                    .padding(end = 20.dp)
                                             ) {
-                                                IconButton(onClick = {
-                                                    val (y, m) = currentYearMonth.value
-                                                    onYearMonthChange(if (m == 1) Pair(y - 1, 12) else Pair(y, m - 1))
-                                                }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月") }
-                                                Text(
-                                                    text = "${currentYearMonth.value.first}年${currentYearMonth.value.second}月",
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 20.sp,
-                                                    modifier = Modifier.clickable { showDatePicker = true },
-                                                    textAlign = TextAlign.Center
-                                                )
-                                                IconButton(onClick = {
-                                                    val (y, m) = currentYearMonth.value
-                                                    onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
-                                                }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
-                                            }
-                                            1 -> Text("统计", fontWeight = FontWeight.Bold)
-                                            2 -> Text("设置", fontWeight = FontWeight.Bold)
-                                        }
-                                    },
-                                    actions = {
-                                        if (navIndex == 0) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("排序:", fontSize = 14.sp)
-                                                Spacer(Modifier.width(4.dp))
-                                                Button(
-                                                    onClick = { saveSortBy(if (sortBy == "create") "date" else "create") },
-                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                                    modifier = Modifier
-                                                        .height(32.dp)
-                                                        .padding(end = 20.dp)
-                                                ) {
-                                                    Text(if (sortBy == "create") "创建时间" else "账单日期", fontSize = 14.sp)
-                                                }
+                                                Text(if (sortBy == "create") "创建时间" else "账单日期", fontSize = 14.sp)
                                             }
                                         }
+                                    }
                                         if (navIndex == 1) {
                                             // 统计页右侧年月切换
                                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -231,16 +231,16 @@ fun NavGraph(
                                                 }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
                                             }
                                         }
-                                    },
-                                    colors = TopAppBarDefaults.topAppBarColors(
-                                        containerColor = when (navIndex) {
-                                            0 -> MaterialTheme.colorScheme.primaryContainer
-                                            1 -> MaterialTheme.colorScheme.tertiaryContainer
-                                            2 -> MaterialTheme.colorScheme.secondaryContainer
-                                            else -> MaterialTheme.colorScheme.surface
-                                        }
-                                    )
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = when (navIndex) {
+                                        0 -> MaterialTheme.colorScheme.primaryContainer
+                                        1 -> MaterialTheme.colorScheme.tertiaryContainer
+                                        2 -> MaterialTheme.colorScheme.secondaryContainer
+                                        else -> MaterialTheme.colorScheme.surface
+                                    }
                                 )
+                            )
                             }
                         },
                         bottomBar = {

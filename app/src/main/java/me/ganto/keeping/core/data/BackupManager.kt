@@ -10,6 +10,8 @@ import me.ganto.keeping.core.model.BillItem
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import android.net.Uri
+import java.io.InputStream
 
 data class BackupData(
     val version: String = "1.0",
@@ -22,7 +24,7 @@ data class BackupData(
 
 class BackupManager(private val context: Context) {
     private val gson = Gson()
-    private val backupDir = File(context.filesDir, "backups")
+    private val backupDir = File(context.getExternalFilesDir(null), "backups")
     private val externalBackupDir = File(context.getExternalFilesDir(null), "backups")
     
     init {
@@ -49,9 +51,8 @@ class BackupManager(private val context: Context) {
             val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
             val fileName = "keeping_backup_${dateFormat.format(Date(timestamp))}.json"
             
-            // 同时保存到内部和外部存储
+            // 只保存到内部私有backups目录
             val internalBackupFile = File(backupDir, fileName)
-            val externalBackupFile = File(externalBackupDir, fileName)
             
             // 计算数据哈希用于验证
             val dataHash = calculateDataHash(bills, settings)
@@ -70,27 +71,6 @@ class BackupManager(private val context: Context) {
             // 保存到内部存储
             internalBackupFile.writeText(json)
             Log.d("BackupManager", "内部备份创建成功: ${internalBackupFile.absolutePath}")
-            
-            // 保存到外部存储（应用专属外部存储）
-            try {
-                externalBackupFile.writeText(json)
-                Log.d("BackupManager", "外部备份创建成功: ${externalBackupFile.absolutePath}")
-            } catch (e: Exception) {
-                Log.w("BackupManager", "外部备份创建失败，但内部备份成功", e)
-            }
-            
-            // 尝试保存到Downloads文件夹（需要权限）
-            try {
-                val downloadsDir = File(context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "Keeping_Backups")
-                if (!downloadsDir.exists()) {
-                    downloadsDir.mkdirs()
-                }
-                val downloadsBackupFile = File(downloadsDir, fileName)
-                downloadsBackupFile.writeText(json)
-                Log.d("BackupManager", "Downloads备份创建成功: ${downloadsBackupFile.absolutePath}")
-            } catch (e: Exception) {
-                Log.w("BackupManager", "Downloads备份创建失败", e)
-            }
             
             Result.success(fileName)
         } catch (e: Exception) {
@@ -232,13 +212,31 @@ class BackupManager(private val context: Context) {
     }
     
     /**
+     * 从外部json文件Uri导入备份
+     */
+    suspend fun importBackupFromJsonUri(context: Context, uri: Uri): Result<Pair<List<BillItem>, Map<String, String>>> = withContext(Dispatchers.IO) {
+        try {
+            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+            if (inputStream == null) return@withContext Result.failure(Exception("无法读取文件"))
+            val json = inputStream.bufferedReader().use { it.readText() }
+            val backupData = gson.fromJson(json, BackupData::class.java)
+            // 验证数据完整性
+            if (backupData.bills.isEmpty() && backupData.settings.isEmpty()) {
+                return@withContext Result.failure(Exception("备份文件为空"))
+            }
+            Result.success(Pair(backupData.bills, backupData.settings))
+        } catch (e: Exception) {
+            Log.e("BackupManager", "导入备份失败", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
      * 获取备份文件路径信息
      */
     fun getBackupPaths(): Map<String, String> {
         return mapOf(
-            "internal_path" to backupDir.absolutePath,
-            "external_path" to externalBackupDir.absolutePath,
-            "downloads_path" to File(context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "Keeping_Backups").absolutePath
+            "internal_path" to backupDir.absolutePath
         )
     }
     
@@ -247,13 +245,8 @@ class BackupManager(private val context: Context) {
      */
     fun checkBackupFileExists(fileName: String): Map<String, Boolean> {
         val internalFile = File(backupDir, fileName)
-        val externalFile = File(externalBackupDir, fileName)
-        val downloadsFile = File(context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "Keeping_Backups/$fileName")
-        
         return mapOf(
-            "internal_exists" to internalFile.exists(),
-            "external_exists" to externalFile.exists(),
-            "downloads_exists" to downloadsFile.exists()
+            "internal_exists" to internalFile.exists()
         )
     }
     

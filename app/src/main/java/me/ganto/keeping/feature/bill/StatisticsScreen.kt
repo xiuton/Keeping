@@ -307,7 +307,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                 // Text on top of bar
                                 Text(
                                     text = incomeStr,
-                                    color = Color(0xFF4CAF50),
+                                color = Color(0xFF4CAF50),
                                     fontSize = 10.sp,
                                     maxLines = 1,
                                     modifier = Modifier
@@ -430,7 +430,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                 } else {
                                     Text(
                                         text = "+${balanceHeight.value.toInt()}",
-                                        color = Color(0xFF4CAF50),
+                            color = Color(0xFF4CAF50),
                                         fontSize = 10.sp,
                                         maxLines = 1,
                                         modifier = Modifier
