@@ -87,6 +87,7 @@ fun StatisticsScreen(
             Spacer(Modifier.width(4.dp))
             Text("支出", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        Spacer(modifier = Modifier.height(16.dp))
         // 柱状图
         Box {
             LazyBarChart(monthBills, year, month, chartHeight = 200.dp)
@@ -318,16 +319,30 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                             }
                             // Balance Text
                             if (!isIncomeHigher && expense > 0) {
-                                Text(
-                                    text = "-${balanceHeight.value.toInt()}",
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    maxLines = 1,
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .rotate(-90f),
-                                    textDecoration = TextDecoration.Underline
-                                )
+                                if (balanceHeight >= textHeightThreshold) {
+                                    Text(
+                                        text = "-${balanceHeight.value.toInt()}",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        maxLines = 1,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .rotate(-90f),
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                } else {
+                                    Text(
+                                        text = "-${balanceHeight.value.toInt()}",
+                                        color = Color(0xFFF44336),
+                                        fontSize = 10.sp,
+                                        maxLines = 1,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .offset(y = -(balanceHeight + 4.dp))
+                                            .rotate(-45f),
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                }
                             }
                         }
                     }
@@ -401,16 +416,30 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                             }
                             // Balance Text
                             if (isIncomeHigher && income > 0) {
-                                Text(
-                                    text = "+${balanceHeight.value.toInt()}",
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    maxLines = 1,
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .rotate(-90f),
-                                    textDecoration = TextDecoration.Underline
-                                )
+                                if (balanceHeight >= textHeightThreshold) {
+                                    Text(
+                                        text = "+${balanceHeight.value.toInt()}",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        maxLines = 1,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .rotate(-90f),
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                } else {
+                                    Text(
+                                        text = "+${balanceHeight.value.toInt()}",
+                                        color = Color(0xFF4CAF50),
+                                        fontSize = 10.sp,
+                                        maxLines = 1,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .offset(y = -(balanceHeight + 4.dp))
+                                            .rotate(-45f),
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                }
                             }
                         }
                     }
