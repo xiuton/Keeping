@@ -39,6 +39,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -58,7 +60,6 @@ fun BillHomeScreen(
     var previewBill by remember { mutableStateOf<BillItem?>(null) }
     var editBill by remember { mutableStateOf<BillItem?>(null) }
     var filterDate by remember { mutableStateOf<String?>(null) } // 当前筛选的日期，null为整月
-    var listState: LazyListState by remember(filterDate) { mutableStateOf(LazyListState()) }
     val prevCount = remember { mutableStateOf(bills.size) }
     var showDayPicker by remember { mutableStateOf(false) }
     val today = Calendar.getInstance()
@@ -97,6 +98,7 @@ fun BillHomeScreen(
             matchMonth && day == filterDay
         }
     }
+    var listState: LazyListState by remember(filteredBills.size, filterDate, currentYearMonth) { mutableStateOf(LazyListState()) }
     LaunchedEffect(bills.size) {
         if (bills.isNotEmpty() && bills.size > prevCount.value) {
             listState.scrollToItem(0)
@@ -666,9 +668,35 @@ fun AddBillDialog(
                 )
                 // 日期选择
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("日期：${dateFormat.format(date)}")
-                    Spacer(Modifier.width(8.dp))
-                    Button(onClick = { showDatePicker = true }) { Text("选择日期") }
+                    Text(
+                        text = "日期：",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    )
+                    IconButton(onClick = {
+                        // 向前一天
+                        val cal = java.util.Calendar.getInstance().apply { time = date }
+                        cal.add(java.util.Calendar.DAY_OF_MONTH, -1)
+                        date = cal.time
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前一天")
+                    }
+                    Text(
+                        text = dateFormat.format(date),
+                        modifier = Modifier
+                            .clickable { showDatePicker = true }
+                            .padding(horizontal = 8.dp),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    )
+                    IconButton(onClick = {
+                        // 向后一天
+                        val cal = java.util.Calendar.getInstance().apply { time = date }
+                        cal.add(java.util.Calendar.DAY_OF_MONTH, 1)
+                        date = cal.time
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "后一天")
+                    }
                 }
             }
         },

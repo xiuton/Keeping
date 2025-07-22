@@ -32,6 +32,7 @@ import me.ganto.keeping.core.data.PREF_KEY_EXP_PAY
 import me.ganto.keeping.core.data.PREF_KEY_INC_PAY
 import me.ganto.keeping.core.data.dataStore
 import me.ganto.keeping.core.data.BackupManager
+import me.ganto.keeping.core.data.DefaultValues
 
 // DataStore扩展
 val BILLS_KEY = stringPreferencesKey("bills_json")
@@ -57,17 +58,17 @@ class MainActivity : ComponentActivity() {
             var sortLoaded by remember { mutableStateOf(false) }
             val backupManager = remember { BackupManager(context) }
             val expenseCategories by context.dataStore.data
-                .map { it[PREF_KEY_EXP_CAT]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他") }
-                .collectAsState(initial = listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他"))
+                .map { it[PREF_KEY_EXP_CAT]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: DefaultValues.EXPENSE_CATEGORIES }
+                .collectAsState(initial = DefaultValues.EXPENSE_CATEGORIES)
             val incomeCategories by context.dataStore.data
-                .map { it[PREF_KEY_INC_CAT]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: listOf("工资", "转账", "理财", "其他") }
-                .collectAsState(initial = listOf("工资", "转账", "理财", "其他"))
+                .map { it[PREF_KEY_INC_CAT]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: DefaultValues.INCOME_CATEGORIES }
+                .collectAsState(initial = DefaultValues.INCOME_CATEGORIES)
             val expensePayTypes by context.dataStore.data
-                .map { it[PREF_KEY_EXP_PAY]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: listOf("支付宝", "微信", "现金", "银行卡", "其他") }
-                .collectAsState(initial = listOf("支付宝", "微信", "现金", "银行卡", "其他"))
+                .map { it[PREF_KEY_EXP_PAY]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: DefaultValues.EXPENSE_PAY_TYPES }
+                .collectAsState(initial = DefaultValues.EXPENSE_PAY_TYPES)
             val incomePayTypes by context.dataStore.data
-                .map { it[PREF_KEY_INC_PAY]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: listOf("工资", "转账", "理财", "其他") }
-                .collectAsState(initial = listOf("工资", "转账", "理财", "其他"))
+                .map { it[PREF_KEY_INC_PAY]?.let { json -> gson.fromJson(json, object: TypeToken<List<String>>(){}.type) } ?: DefaultValues.INCOME_PAY_TYPES }
+                .collectAsState(initial = DefaultValues.INCOME_PAY_TYPES)
             val catPayLoaded = expenseCategories.isNotEmpty() && incomeCategories.isNotEmpty() && expensePayTypes.isNotEmpty() && incomePayTypes.isNotEmpty()
             LaunchedEffect(Unit) {
                 val json = context.dataStore.data.map { it[BILLS_KEY] ?: "" }.first()

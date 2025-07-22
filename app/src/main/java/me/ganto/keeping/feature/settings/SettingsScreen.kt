@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.foundation.layout.FlowRow
+import me.ganto.keeping.core.data.DefaultValues
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -67,47 +68,41 @@ fun SettingsScreen(
 
     val data by context.dataStore.data.collectAsState(initial = emptyPreferences())
 
-    // 正确的默认值
-    val defaultExpenseCategories = listOf("餐饮", "交通", "购物", "娱乐", "医疗", "其他") // 支出分类
-    val defaultExpensePayTypes = listOf("支付宝", "微信", "现金", "银行卡", "其他") // 支出方式
-    val defaultIncomeCategories = listOf("工资", "买卖", "理财", "其他") // 收入分类
-    val defaultIncomePayTypes = listOf("银行卡", "支付宝", "微信", "其他") // 收入方式
-
     val expenseCategories = remember(data) {
         data[PREF_KEY_EXP_CAT]?.let {
             try {
                 gson.fromJson<List<String>>(it, object : TypeToken<List<String>>() {}.type)
             } catch (_: Exception) {
-                defaultExpenseCategories
+                DefaultValues.EXPENSE_CATEGORIES
             }
-        } ?: defaultExpenseCategories
+        } ?: DefaultValues.EXPENSE_CATEGORIES
     }
     val incomeCategories = remember(data) {
         data[PREF_KEY_INC_CAT]?.let {
             try {
                 gson.fromJson<List<String>>(it, object : TypeToken<List<String>>() {}.type)
             } catch (_: Exception) {
-                defaultIncomeCategories
+                DefaultValues.INCOME_CATEGORIES
             }
-        } ?: defaultIncomeCategories
+        } ?: DefaultValues.INCOME_CATEGORIES
     }
     val expensePayTypes = remember(data) {
         data[PREF_KEY_EXP_PAY]?.let {
             try {
                 gson.fromJson<List<String>>(it, object : TypeToken<List<String>>() {}.type)
             } catch (_: Exception) {
-                defaultExpensePayTypes
+                DefaultValues.EXPENSE_PAY_TYPES
             }
-        } ?: defaultExpensePayTypes
+        } ?: DefaultValues.EXPENSE_PAY_TYPES
     }
     val incomePayTypes = remember(data) {
         data[PREF_KEY_INC_PAY]?.let {
             try {
                 gson.fromJson<List<String>>(it, object : TypeToken<List<String>>() {}.type)
             } catch (_: Exception) {
-                defaultIncomePayTypes
+                DefaultValues.INCOME_PAY_TYPES
             }
-        } ?: defaultIncomePayTypes
+        } ?: DefaultValues.INCOME_PAY_TYPES
     }
 
     var selectedType by remember { mutableStateOf("支出") }
@@ -351,34 +346,34 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                ) {
                         rowItems.forEach { category ->
-                            Card(
-                                modifier = Modifier
+                        Card(
+                            modifier = Modifier
                                     .weight(1f)
                                     .padding(2.dp)
                                     .defaultMinSize(minHeight = 80.dp)
-                                    .clickable {
-                                        showEditDialog = "category" to category
-                                        editText = category
-                                    },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
-                                ),
-                                elevation = CardDefaults.cardElevation(0.dp)
-                            ) {
+                                .clickable {
+                                    showEditDialog = "category" to category
+                                    editText = category
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 4.dp, vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = category,
+                            ) {
+                                Text(
+                                    text = category,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 15.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 15.sp,
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         modifier = Modifier.fillMaxWidth()
@@ -427,25 +422,25 @@ fun SettingsScreen(
                                             )
                                         }
                                     }
-                                    if (currentCategories.size > 1) {
+                                if (currentCategories.size > 1) {
                                         Spacer(Modifier.height(2.dp))
                                         Row(
                                             horizontalArrangement = Arrangement.Center,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            IconButton(
-                                                onClick = { showDeleteDialog = "category" to category },
+                                    IconButton(
+                                        onClick = { showDeleteDialog = "category" to category },
                                                 modifier = Modifier.size(22.dp)
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.Close,
-                                                    contentDescription = "删除",
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "删除",
                                                     modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                        }
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
                                     }
+                                }
+                            }
                                 }
                             }
                         }
@@ -506,34 +501,34 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                ) {
                         rowItems.forEach { payType ->
-                            Card(
-                                modifier = Modifier
+                        Card(
+                            modifier = Modifier
                                     .weight(1f)
                                     .padding(2.dp)
                                     .defaultMinSize(minHeight = 80.dp)
-                                    .clickable {
-                                        showEditDialog = "payType" to payType
-                                        editText = payType
-                                    },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
-                                ),
-                                elevation = CardDefaults.cardElevation(0.dp)
-                            ) {
+                                .clickable {
+                                    showEditDialog = "payType" to payType
+                                    editText = payType
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 4.dp, vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = payType,
+                            ) {
+                                Text(
+                                    text = payType,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 15.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 15.sp,
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         modifier = Modifier.fillMaxWidth()
@@ -582,25 +577,25 @@ fun SettingsScreen(
                                             )
                                         }
                                     }
-                                    if (currentPayTypes.size > 1) {
+                                if (currentPayTypes.size > 1) {
                                         Spacer(Modifier.height(2.dp))
                                         Row(
                                             horizontalArrangement = Arrangement.Center,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            IconButton(
-                                                onClick = { showDeleteDialog = "payType" to payType },
+                                    IconButton(
+                                        onClick = { showDeleteDialog = "payType" to payType },
                                                 modifier = Modifier.size(22.dp)
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.Close,
-                                                    contentDescription = "删除",
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "删除",
                                                     modifier = Modifier.size(16.dp),
-                                                    tint = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                        }
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
                                     }
+                                }
+                            }
                                 }
                             }
                         }

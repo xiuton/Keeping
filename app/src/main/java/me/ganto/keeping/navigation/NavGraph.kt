@@ -209,6 +209,27 @@ fun NavGraph(
                                             }
                                         }
                                     }
+                                    if (navIndex == 1) {
+                                        // 统计页右侧年月切换
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            IconButton(onClick = {
+                                                val (y, m) = currentYearMonth.value
+                                                onYearMonthChange(if (m == 1) Pair(y - 1, 12) else Pair(y, m - 1))
+                                            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月") }
+                                            Text(
+                                                text = "${currentYearMonth.value.first}年${currentYearMonth.value.second}月",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 16.sp,
+                                                modifier = Modifier
+                                                    .clickable { showDatePicker = true }
+                                                    .padding(horizontal = 4.dp)
+                                            )
+                                            IconButton(onClick = {
+                                                val (y, m) = currentYearMonth.value
+                                                onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
+                                            }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
+                                        }
+                                    }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(
                                     containerColor = when (navIndex) {
@@ -249,7 +270,15 @@ fun NavGraph(
                                     onYearMonthChange = onYearMonthChange,
                                     onSortChange = { saveSortBy(if (sortBy == "create") "date" else "create") }
                                 )
-                                1 -> StatisticsScreen(bills = bills)
+                                1 -> {
+                                    // 统计页全屏渲染，年月切换由NavGraph控制
+                                    StatisticsScreen(
+                                        bills = bills,
+                                        year = currentYearMonth.value.first,
+                                        month = currentYearMonth.value.second,
+                                        onYearMonthChange = onYearMonthChange
+                                    )
+                                }
                                 2 -> SettingsScreen(
                                     isDark = isDark, 
                                     onDarkChange = { saveDarkMode(it) },
