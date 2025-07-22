@@ -33,6 +33,7 @@ import me.ganto.keeping.core.data.PREF_KEY_INC_PAY
 import me.ganto.keeping.core.data.dataStore
 import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.core.data.DefaultValues
+import androidx.core.view.WindowCompat
 
 // DataStore扩展
 val BILLS_KEY = stringPreferencesKey("bills_json")
@@ -43,7 +44,7 @@ val PREF_KEY_SORT = stringPreferencesKey("sort_by")
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge() // 允许内容延伸到系统栏下方
         setContent {
             // 这里直接调用 NavGraph，传递所需参数
             val context = LocalContext.current

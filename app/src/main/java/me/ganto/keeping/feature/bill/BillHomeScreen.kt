@@ -41,6 +41,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -55,7 +56,8 @@ fun BillHomeScreen(
     incomePayTypes: List<String>,
     currentYearMonth: Pair<Int, Int>,
     onYearMonthChange: (Pair<Int, Int>) -> Unit,
-    onSortChange: () -> Unit
+    onSortChange: () -> Unit,
+    navController: NavController
 ) {
     var previewBill by remember { mutableStateOf<BillItem?>(null) }
     var editBill by remember { mutableStateOf<BillItem?>(null) }
@@ -194,8 +196,15 @@ fun BillHomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("账单列表", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            ) {
+                Text(
+                text = "账单列表",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .clickable { navController.navigate("all_bills") }
+            )
             Spacer(Modifier.weight(1f))
             // 日切换控件只在整月未选中时显示
             if (filterDate != null) {
