@@ -290,7 +290,7 @@ fun NavGraph(
                                     bills = bills,
                                     saveBills = saveBills
                                 )
-                                3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) }, navController = navController)
+                                3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) }, navController = navController, innerPadding = innerPadding)
                             }
                             if (showAddDialog) {
                                 // 保留原有弹窗编辑功能
