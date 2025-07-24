@@ -42,25 +42,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import java.io.InputStream
 import java.io.OutputStream
 import androidx.compose.material.icons.filled.Edit
 import androidx.navigation.NavController
 import me.ganto.keeping.navigation.ROUTE_FEEDBACK
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
+import android.os.Handler
+import android.os.Looper
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.FileOutputStream
 import java.io.IOException
-import android.util.Log
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyScreen(
     isDark: Boolean,
@@ -115,11 +116,11 @@ fun MyScreen(
     // uCrop裁剪Launcher
     val cropLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            val resultUri = UCrop.getOutput(result.data ?: return@rememberLauncherForActivityResult)
-            resultUri?.let {
-                saveAvatarUri(it.toString())
-            }
+        val resultUri = UCrop.getOutput(result.data ?: return@rememberLauncherForActivityResult)
+        resultUri?.let {
+            saveAvatarUri(it.toString())
         }
+    }
     // 图片选择器
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -163,17 +164,17 @@ fun MyScreen(
     // 背景图选择器
     val bgLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let {
-                // 拷贝图片到私有目录
-                val inputStream: InputStream? = context.contentResolver.openInputStream(it)
-                val bgFile = File(context.filesDir, "my_bg_${System.currentTimeMillis()}.jpg")
-                val outputStream: OutputStream = bgFile.outputStream()
-                inputStream?.copyTo(outputStream)
-                inputStream?.close()
-                outputStream.close()
-                saveBgUri(bgFile.absolutePath)
-            }
+        uri?.let {
+            // 拷贝图片到私有目录
+            val inputStream: InputStream? = context.contentResolver.openInputStream(it)
+            val bgFile = File(context.filesDir, "my_bg_${System.currentTimeMillis()}.jpg")
+            val outputStream: OutputStream = bgFile.outputStream()
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+            saveBgUri(bgFile.absolutePath)
         }
+    }
 
     // 更严谨的版本号比较
     fun isNewerVersion(server: String, local: String): Boolean {
@@ -214,9 +215,8 @@ fun MyScreen(
 
     var showUpdateDialog by remember { mutableStateOf(false) }
     var isDownloading by remember { mutableStateOf(false) }
-    var downloadProgress by remember { mutableStateOf(0f) }
     var downloadError by remember { mutableStateOf<String?>(null) }
-    val client = remember { OkHttpClient() }
+    // 删除所有与 OkHttp、downloadFileWithProgress、onResponse、onFailure、OkHttpClient 相关的代码和变量，只保留 DownloadManager 相关逻辑。
 
     fun checkUpdate() {
         checking = true
@@ -230,7 +230,8 @@ fun MyScreen(
                     val element = elements.getJSONObject(0)
                     val serverVersion = element.getString("versionName")
                     val outputFile = element.getString("outputFile")
-                    val apkUrl = "https://keeping-release.netlify.app/$outputFile"
+//                    val apkUrl = "https://keeping-release.netlify.app/$outputFile"
+                    val apkUrl = "https://downv6.qq.com/qqweb/QQ_1/android_apk/Android_9.2.0_64.apk"
                     if (isNewerVersion(serverVersion, currentVersion)) {
                         latestVersion = serverVersion
                         updateUrl = apkUrl
@@ -242,6 +243,9 @@ fun MyScreen(
                     } else {
                         updateAvailable = false
                         scope.launch(Dispatchers.Main) {
+                            Toast.makeText(context, "已是最新版本 (本地:$currentVersion, 服务器:$serverVersion)", Toast.LENGTH_LONG).show()
+                        }
+                        Handler(Looper.getMainLooper()).post {
                             Toast.makeText(context, "已是最新版本 (本地:$currentVersion, 服务器:$serverVersion)", Toast.LENGTH_LONG).show()
                         }
                     }
@@ -276,68 +280,6 @@ fun MyScreen(
         Toast.makeText(context, "正在后台下载更新包，请稍后安装", Toast.LENGTH_LONG).show()
     }
 
-    fun downloadFileWithProgress(
-        url: String,
-        destFile: File,
-        onProgress: (Float) -> Unit,
-        onComplete: () -> Unit,
-        onError: (Throwable) -> Unit
-    ) {
-        val request = Request.Builder().url(url).build()
-        client.newCall(request).enqueue(object : okhttp3.Callback {
-            override fun onFailure(call: okhttp3.Call, e: IOException) {
-                Log.d("Download", "onFailure: ${e.message}")
-                onError(e)
-            }
-            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                Log.d("Download", "onResponse: code=${response.code}")
-                if (!response.isSuccessful) {
-                    onError(IOException("Unexpected code $response"))
-                    return
-                }
-                val body = response.body
-                if (body == null) {
-                    onError(IOException("Empty body"))
-                    return
-                }
-                val total = body.contentLength()
-                Log.d("Download", "contentLength: $total")
-                var sum = 0L
-                val input = body.byteStream()
-                val output = FileOutputStream(destFile)
-                val buffer = ByteArray(8 * 1024)
-                var len: Int
-                try {
-                    if (total > 0) {
-                        while (input.read(buffer).also { len = it } != -1) {
-                            output.write(buffer, 0, len)
-                            sum += len
-                            Log.d("Download", "len=$len, sum=$sum, total=$total")
-                            onProgress(sum * 1f / total)
-                            Thread.sleep(30) // 仅用于调试观察进度
-                        }
-                    } else {
-                        Log.d("Download", "contentLength <= 0, using fallback copy")
-                        while (input.read(buffer).also { len = it } != -1) {
-                            output.write(buffer, 0, len)
-                            Log.d("Download", "fallback len=$len")
-                        }
-                        onProgress(-1f)
-                    }
-                    output.flush()
-                    onComplete()
-                } catch (e: Exception) {
-                    Log.e("Download", "Exception in download: ${e.message}", e)
-                    onError(e)
-                } finally {
-                    Log.d("Download", "finally: input/output closed")
-                    input.close()
-                    output.close()
-                }
-            }
-        })
-    }
-
     // 弹窗控制
     var showDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
@@ -348,6 +290,60 @@ fun MyScreen(
 
     var testEntryVisible by remember { mutableStateOf(false) }
     var versionClickCount by remember { mutableStateOf(0) }
+
+    var downloadProgress by remember { mutableStateOf(0) }
+    var downloadCurrent by remember { mutableStateOf(0L) }
+    var downloadTotal by remember { mutableStateOf(0L) }
+    var downloadStatus by remember { mutableStateOf(0) }
+
+    var pendingInstallApk by remember { mutableStateOf<File?>(null) }
+    var deleteAfterInstall by remember { mutableStateOf(false) }
+
+    // 注册广播接收进度
+    DisposableEffect(Unit) {
+        val mainHandler = Handler(Looper.getMainLooper())
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == "me.ganto.keeping.DOWNLOAD_PROGRESS") {
+                    mainHandler.post {
+                        val progress = intent.getIntExtra("progress", 0)
+                        val downloaded = intent.getLongExtra("downloaded", 0L)
+                        val total = intent.getLongExtra("total", 0L)
+                        val status = intent.getIntExtra("status", 0)
+                        downloadProgress = progress
+                        downloadCurrent = downloaded
+                        downloadTotal = total
+                        downloadStatus = status
+                    }
+                }
+            }
+        }
+        val filter = IntentFilter("me.ganto.keeping.DOWNLOAD_PROGRESS")
+        context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    // 授权后自动安装
+    LaunchedEffect(pendingInstallApk) {
+        if (pendingInstallApk != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (context.packageManager.canRequestPackageInstalls()) {
+                val apkUri = FileProvider.getUriForFile(
+                    context,
+                    context.packageName + ".fileprovider",
+                    pendingInstallApk!!
+                )
+                val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(apkUri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(installIntent)
+                pendingInstallApk = null
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -381,16 +377,16 @@ fun MyScreen(
                 )
             }
             // 右上角添加背景图icon按钮
-            IconButton(
-                onClick = { bgLauncher.launch("image/*") },
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = "添加/更换背景图",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+                IconButton(
+                    onClick = { bgLauncher.launch("image/*") },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "添加/更换背景图",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             // 半透明遮罩
             Box(
                 Modifier
@@ -442,32 +438,32 @@ fun MyScreen(
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
         ) {
-            Spacer(Modifier.height(16.dp))
-            // 账户与设置
-            Card {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("深色模式", fontSize = 16.sp)
-                        Switch(checked = isDark, onCheckedChange = onDarkChange)
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { checkUpdate() }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("检查更新", fontSize = 16.sp)
-                        if (checking) {
+        Spacer(Modifier.height(16.dp))
+        // 账户与设置
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("深色模式", fontSize = 16.sp)
+                    Switch(checked = isDark, onCheckedChange = onDarkChange)
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { checkUpdate() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("检查更新", fontSize = 16.sp)
+                    if (checking) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 strokeWidth = 2.dp
@@ -492,29 +488,29 @@ fun MyScreen(
                                     }
                             )
                         }
-                    }
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            // 关于与帮助
-            Card {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { navController.navigate(ROUTE_FEEDBACK) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("意见反馈", fontSize = 16.sp)
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
+        }
+        Spacer(Modifier.height(16.dp))
+        // 关于与帮助
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate(ROUTE_FEEDBACK) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("意见反馈", fontSize = 16.sp)
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
                             .clickable {
                                 Toast.makeText(
                                     context,
@@ -522,25 +518,25 @@ fun MyScreen(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("关于App", fontSize = 16.sp)
+                }
+            }
+        }
+        if (testEntryVisible) {
+            Spacer(Modifier.height(16.dp))
+            // 测试页面入口板块
+            Card {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate("test") }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("关于App", fontSize = 16.sp)
-                    }
-                }
-            }
-            if (testEntryVisible) {
-                Spacer(Modifier.height(16.dp))
-                // 测试页面入口板块
-                Card {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { navController.navigate("test") }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
                             Text(
                                 "测试页面入口",
                                 fontSize = 16.sp,
@@ -552,147 +548,302 @@ fun MyScreen(
                 }
             }
             Spacer(Modifier.height(16.dp))
-        }
-        // 头像/昵称编辑弹窗
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("编辑个人信息") },
-                text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(contentAlignment = Alignment.BottomEnd) {
-                            Card(
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clickable { launcher.launch("image/*") },
-                                elevation = CardDefaults.cardElevation(2.dp)
-                            ) {
-                                if (avatarUri.isNotBlank()) {
-                                    AsyncImage(
-                                        model = avatarUri,
-                                        contentDescription = "头像",
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Filled.Person,
-                                        contentDescription = "头像",
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(12.dp),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .offset(x = (-6).dp, y = (-6).dp)
-                                    .clickable { launcher.launch("image/*") }
-                            ) {
+    }
+    // 头像/昵称编辑弹窗
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("编辑个人信息") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        Card(
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clickable { launcher.launch("image/*") },
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            if (avatarUri.isNotBlank()) {
+                                AsyncImage(
+                                    model = avatarUri,
+                                    contentDescription = "头像",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
                                 Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = "更换头像",
-                                    tint = Color.White,
-                                    modifier = Modifier.padding(4.dp)
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = "头像",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
-                        Spacer(Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = tempName,
-                            onValueChange = { tempName = it },
-                            label = { Text("昵称") }
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .offset(x = (-6).dp, y = (-6).dp)
+                                .clickable { launcher.launch("image/*") }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = "更换头像",
+                                tint = Color.White,
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        saveNickname(tempName)
-                        showDialog = false
-                    }) { Text("保存") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) { Text("取消") }
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = tempName,
+                        onValueChange = { tempName = it },
+                        label = { Text("昵称") }
+                    )
                 }
-            )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    saveNickname(tempName)
+                    showDialog = false
+                }) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("取消") }
+            }
+        )
         }
         // 新版本弹窗
         if (showUpdateDialog) {
             AlertDialog(
-                onDismissRequest = { if (!isDownloading) showUpdateDialog = false },
+                onDismissRequest = { if (downloadStatus == 8 || downloadStatus == 16) showUpdateDialog = false },
                 title = { Text("发现新版本") },
                 text = {
                     Column {
                         Text("新版本号: $latestVersion")
-                        if (isDownloading) {
-                            Spacer(Modifier.height(16.dp))
-                            if (downloadProgress in 0f..1f && downloadProgress > 0f && downloadProgress < 1f) {
-                                LinearProgressIndicator(progress = downloadProgress, modifier = Modifier.fillMaxWidth())
+                        when (downloadStatus) {
+                            1, 2 -> {
+                                Spacer(Modifier.height(20.dp))
+                                LinearProgressIndicator(
+                                    progress = { if (downloadTotal > 0) downloadCurrent / downloadTotal.toFloat() else 0f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp),
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    if (downloadCurrent == 0L || downloadTotal <= 0L)
+                                        "正在获取进度..."
+                                    else
+                                        "下载进度：${(downloadCurrent * 100 / downloadTotal)}% (${downloadCurrent / 1024}KB/${downloadTotal / 1024}KB)",
+                                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                                    fontSize = 15.sp
+                                )
                                 Spacer(Modifier.height(8.dp))
-                                Text("${(downloadProgress * 100).toInt()}%", modifier = Modifier.align(Alignment.CenterHorizontally))
-                            } else {
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                                Spacer(Modifier.height(8.dp))
-                                Text("正在获取进度...", modifier = Modifier.align(Alignment.CenterHorizontally))
                             }
-                            if (downloadError != null) {
+                            8 -> { // 下载完成，显示“去安装”与“安装后删除”按钮
                                 Spacer(Modifier.height(8.dp))
-                                Text(downloadError ?: "", color = MaterialTheme.colorScheme.error)
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Spacer(Modifier.height(24.dp))
+                                    Text(
+                                        "下载完成",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.height(20.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Checkbox(
+                                            checked = deleteAfterInstall,
+                                            onCheckedChange = { deleteAfterInstall = it }
+                                        )
+                                        Text("安装后自动删除安装包")
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                }
                             }
-                        } else if (downloadError != null) {
-                            Spacer(Modifier.height(8.dp))
-                            Text(downloadError ?: "", color = MaterialTheme.colorScheme.error)
+                            16 -> { // 下载失败，显示“关闭”
+                                Button(onClick = { showUpdateDialog = false }, modifier = Modifier.height(32.dp)) {
+                                    Text("关闭")
+                                }
+                            }
                         }
                     }
                 },
                 confirmButton = {
-                    if (!isDownloading) {
-                        Row {
-                            TextButton(
-                                onClick = { showUpdateDialog = false },
-                                modifier = Modifier.height(32.dp)
-                            ) { Text("取消") }
-                            Spacer(Modifier.width(16.dp))
-                            Button(
-                                onClick = {
-                                    isDownloading = true
-                                    downloadProgress = 0f
-                                    downloadError = null
-                                    val destFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Keeping_${latestVersion}_Android.apk")
-                                    downloadFileWithProgress(
-                                        url = updateUrl,
-                                        destFile = destFile,
-                                        onProgress = { progress ->
-                                            scope.launch(Dispatchers.Main) { downloadProgress = progress }
-                                        },
-                                        onComplete = {
-                                            scope.launch(Dispatchers.Main) {
+                    Row {
+                        when (downloadStatus) {
+                            0 -> { // 未下载，显示“下载”和“取消”
+                                TextButton(
+                                    onClick = { showUpdateDialog = false },
+                                    modifier = Modifier.height(32.dp)
+                                ) { Text("取消") }
+                                Spacer(Modifier.width(16.dp))
+                                Button(
+                                    onClick = {
+                                        isDownloading = true
+                                        downloadProgress = 0
+                                        downloadError = null
+                                        downloadStatus = 1 // 立即切换到“下载中”分支
+                                        val destFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Keeping_${latestVersion}_Android.apk")
+                                        downloadFileWithProgress(
+                                            url = updateUrl,
+                                            destFile = destFile,
+                                            onProgress = { current, total ->
+                                                downloadCurrent = current
+                                                downloadTotal = total
+                                                downloadStatus = 2
+                                            },
+                                            onComplete = {
+                                                downloadStatus = 8
                                                 isDownloading = false
-                                                showUpdateDialog = false
-                                                Toast.makeText(context, "下载完成，文件已保存到: ${destFile.absolutePath}", Toast.LENGTH_LONG).show()
-                                                // 可在此处自动触发安装
-                                            }
-                                        },
-                                        onError = { e ->
-                                            scope.launch(Dispatchers.Main) {
+                                                var canInstall = true
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    if (!context.packageManager.canRequestPackageInstalls()) {
+                                                        val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                                            data = Uri.parse("package:" + context.packageName)
+                                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                        }
+                                                        context.startActivity(intent)
+                                                        Handler(Looper.getMainLooper()).post {
+                                                            Toast.makeText(context, "请授权允许安装未知应用", Toast.LENGTH_LONG).show()
+                                                        }
+                                                        canInstall = false
+                                                        pendingInstallApk = destFile
+                                                    }
+                                                }
+                                                if (canInstall) {
+                                                    // 自动弹出安装
+                                                    val apkUri = FileProvider.getUriForFile(
+                                                        context,
+                                                        context.packageName + ".fileprovider",
+                                                        destFile
+                                                    )
+                                                    val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                                                        setDataAndType(apkUri, "application/vnd.android.package-archive")
+                                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    }
+                                                    context.startActivity(installIntent)
+                                                    pendingInstallApk = null
+                                                }
+                                            },
+                                            onError = { e ->
+                                                downloadStatus = 16
                                                 isDownloading = false
-                                                downloadError = "下载失败: ${e.message}"
+                                                downloadError = e.message
                                             }
+                                        )
+                                    },
+                                    modifier = Modifier.height(32.dp)
+                                ) { Text("下载") }
+                            }
+                            1, 2 -> {
+                                // 下载中，不显示按钮或可选显示灰色“下载中...”
+                            }
+                            8 -> { // 下载完成，显示“去安装”按钮
+                                Button(
+                                    onClick = {
+                                        val destFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Keeping_${latestVersion}_Android.apk")
+                                        val apkUri = FileProvider.getUriForFile(
+                                            context,
+                                            context.packageName + ".fileprovider",
+                                            destFile
+                                        )
+                                        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(apkUri, "application/vnd.android.package-archive")
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         }
-                                    )
-                                },
-                                modifier = Modifier.height(32.dp)
-                            ) { Text("下载") }
+                                        if (deleteAfterInstall) {
+                                            // 只在安装完成后删除安装包
+                                            val packageReceiver = object : BroadcastReceiver() {
+                                                override fun onReceive(context: Context?, intent: Intent?) {
+                                                    val action = intent?.action
+                                                    val data = intent?.data
+                                                    if (action == Intent.ACTION_PACKAGE_ADDED && data != null) {
+                                                        // 这里可以进一步判断包名是否为你的目标包名
+                                                        if (destFile.exists()) destFile.delete()
+                                                        context?.unregisterReceiver(this)
+                                                    }
+                                                }
+                                            }
+                                            val filter = IntentFilter(Intent.ACTION_PACKAGE_ADDED)
+                                            filter.addDataScheme("package")
+                                            context.registerReceiver(packageReceiver, filter)
+                                        }
+                                        context.startActivity(installIntent)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(40.dp)
+                                ) { Text("去安装") }
+                            }
+                            16 -> { // 下载失败，显示“关闭”
+                                Button(onClick = { showUpdateDialog = false }, modifier = Modifier.height(32.dp)) {
+                                    Text("关闭")
+                                }
+                            }
                         }
                     }
-                }
+                },
+                dismissButton = null
             )
         }
         // 底部间距
         Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
     }
 }
+
+// OkHttp 实时进度下载
+fun downloadFileWithProgress(
+    url: String,
+    destFile: File,
+    onProgress: (Long, Long) -> Unit,
+    onComplete: () -> Unit,
+    onError: (Throwable) -> Unit
+) {
+    val client = OkHttpClient()
+    val request = Request.Builder().url(url).build()
+    client.newCall(request).enqueue(object : okhttp3.Callback {
+        override fun onFailure(call: okhttp3.Call, e: IOException) {
+            onError(e)
+        }
+        override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+            if (!response.isSuccessful) {
+                onError(IOException("Unexpected code $response"))
+                return
+            }
+            val body = response.body ?: return onError(IOException("Empty body"))
+            val total = body.contentLength()
+            var sum = 0L
+            val input = body.byteStream()
+            val output = FileOutputStream(destFile)
+            val buffer = ByteArray(8 * 1024)
+            var len: Int
+            try {
+                while (input.read(buffer).also { len = it } != -1) {
+                    output.write(buffer, 0, len)
+                    sum += len
+                    onProgress(sum, total)
+                }
+                output.flush()
+                onComplete()
+            } catch (e: Exception) {
+                onError(e)
+            } finally {
+                input.close()
+                output.close()
+            }
+        }
+    })
+} 

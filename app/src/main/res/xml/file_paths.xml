@@ -2,4 +2,8 @@
 <paths>
     <cache-path name="cache" path="." />
     <files-path name="files" path="." />
+    <!-- 支持私有 files/Download 目录 -->
+    <external-files-path name="external_files_download" path="Download/" />
+    <!-- 支持外部存储 Download 目录（如有需要） -->
+    <external-path name="external_download" path="Download/" />
 </paths> 
