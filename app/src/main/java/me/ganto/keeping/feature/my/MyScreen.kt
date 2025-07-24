@@ -354,7 +354,7 @@ fun MyScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(260.dp)
+                .height(450.dp)
         ) {
             if (bgUri != null && File(bgUri!!).exists()) {
                 val bgFile = File(bgUri!!)
@@ -362,8 +362,7 @@ fun MyScreen(
                     model = bgFile,
                     contentDescription = "背景图",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .blur(16.dp),
+                        .fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             } else {
@@ -371,15 +370,14 @@ fun MyScreen(
                     painter = painterResource(id = R.drawable.ic_launcher_background),
                     contentDescription = "默认背景图",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .blur(16.dp),
+                        .fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
             // 右上角添加背景图icon按钮
                 IconButton(
                     onClick = { bgLauncher.launch("image/*") },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 32.dp, end = 16.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
@@ -391,7 +389,7 @@ fun MyScreen(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.18f))
+                    .background(Color.Black.copy(alpha = 0.1f))
             )
             // 头像和昵称居中叠加
             Column(
