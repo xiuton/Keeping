@@ -56,7 +56,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
         val notification = NotificationCompat.Builder(context, channelId)
             .setContentTitle("记账提醒")
-            .setContentText("该记账啦！")
+            .setContentText("今天是否记账了？")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setAutoCancel(true)
             .build()

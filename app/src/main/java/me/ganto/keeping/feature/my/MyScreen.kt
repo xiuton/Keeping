@@ -70,9 +70,12 @@ import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalTime
-import java.util.Locale
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.clip
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -370,7 +373,7 @@ fun MyScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(450.dp)
+                .height(300.dp)
         ) {
             if (bgUri != null && File(bgUri!!).exists()) {
                 val bgFile = File(bgUri!!)
@@ -390,17 +393,30 @@ fun MyScreen(
                     contentScale = ContentScale.Crop
                 )
             }
-            // 右上角添加背景图icon按钮
-                IconButton(
-                    onClick = { bgLauncher.launch("image/*") },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 32.dp, end = 16.dp)
+            // 右上角添加背景图icon按钮，top为系统栏高度
+            val density = LocalDensity.current
+            val statusBarHeightPx = WindowInsets.statusBars.getTop(density)
+            val statusBarHeightDp = with(density) { statusBarHeightPx.toDp() }
+            IconButton(
+                onClick = { bgLauncher.launch("image/*") },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = statusBarHeightDp, end = 16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
                         contentDescription = "添加/更换背景图",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
+            }
             // 半透明遮罩
             Box(
                 Modifier
