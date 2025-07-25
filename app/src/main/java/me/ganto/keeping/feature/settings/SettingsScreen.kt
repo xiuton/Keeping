@@ -691,39 +691,6 @@ fun SettingsScreen(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // 测试备份按钮
-                OutlinedButton(
-                    onClick = {
-                        scope.launch {
-                            val settings = collectSettingsData()
-                            val result = backupManager.createBackup(bills, settings, "测试备份")
-                            result.onSuccess { fileName ->
-                                val fileStatus = backupManager.checkBackupFileExists(fileName)
-                                showMessage = "测试备份完成\n" +
-                                    "文件名: $fileName\n" +
-                                    "内部存储: ${if (fileStatus["internal_exists"] == true) "✓" else "✗"}\n" +
-                                    "外部存储: ${if (fileStatus["external_exists"] == true) "✓" else "✗"}\n" +
-                                    "下载文件夹: ${if (fileStatus["downloads_exists"] == true) "✓" else "✗"}"
-                                
-                                // 刷新备份文件列表
-                                backupManager.getBackupFiles().onSuccess { files ->
-                                    backupFiles = files
-                                }
-                            }.onFailure { error ->
-                                showMessage = "测试备份失败: ${error.message}"
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading
-                ) {
-                    Icon(Icons.Default.Info, contentDescription = "测试备份")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("测试备份")
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
                 // 备份文件列表
                 if (backupFiles.isNotEmpty()) {
                     Text("备份文件列表", fontWeight = FontWeight.Medium, fontSize = 14.sp)
