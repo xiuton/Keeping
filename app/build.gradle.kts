@@ -74,4 +74,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("com.github.yalantis:ucrop:2.2.8")
+    implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 }

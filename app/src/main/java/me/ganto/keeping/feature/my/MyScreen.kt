@@ -1,5 +1,6 @@
 package me.ganto.keeping.feature.my
 
+import android.Manifest
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
@@ -59,14 +60,19 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.FileOutputStream
 import java.io.IOException
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import android.app.AlarmManager
 import android.app.PendingIntent
 import java.util.Calendar
-import me.ganto.keeping.feature.my.ReminderReceiver
 import android.provider.Settings
 import android.content.pm.PackageManager
+import androidx.compose.material.icons.filled.Info
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import java.time.LocalTime
+import java.util.Locale
+import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -237,8 +243,8 @@ fun MyScreen(
                     val element = elements.getJSONObject(0)
                     val serverVersion = element.getString("versionName")
                     val outputFile = element.getString("outputFile")
-//                    val apkUrl = "https://keeping-release.netlify.app/$outputFile"
-                    val apkUrl = "https://downv6.qq.com/qqweb/QQ_1/android_apk/Android_9.2.0_64.apk"
+                    val apkUrl = "https://keeping-release.netlify.app/$outputFile"
+                    // val apkUrl = "https://downv6.qq.com/qqweb/QQ_1/android_apk/Android_9.2.0_64.apk"
                     if (isNewerVersion(serverVersion, currentVersion)) {
                         latestVersion = serverVersion
                         updateUrl = apkUrl
@@ -351,6 +357,9 @@ fun MyScreen(
             }
         }
     }
+
+    // 记账提醒时间选择弹窗
+    val timeDialogState = rememberMaterialDialogState()
 
     Column(
         modifier = Modifier
@@ -506,10 +515,9 @@ fun MyScreen(
         val prefsFlow = context.dataStore.data
         val prefs by prefsFlow.collectAsState(initial = null)
         val reminderEnabled = prefs?.get(REMINDER_ENABLED_KEY)?.toBoolean() ?: false
-        val reminderTime = prefs?.get(REMINDER_TIME_KEY) ?: "20:00"
-        var showTimePicker by remember { mutableStateOf(false) }
-        var tempHour by remember { mutableStateOf(20) }
-        var tempMinute by remember { mutableStateOf(0) }
+        val reminderTime = prefs?.get(REMINDER_TIME_KEY) ?: "21:30"
+        var tempHour by remember { mutableStateOf(21) }
+        var tempMinute by remember { mutableStateOf(30) }
         fun saveReminder(enabled: Boolean, time: String) {
             scope.launch {
                 context.dataStore.edit { prefs ->
@@ -547,18 +555,29 @@ fun MyScreen(
                     add(Calendar.DAY_OF_MONTH, 1)
                 }
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
-            } else {
-                alarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.setExact(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+                }
+            } catch (e: SecurityException) {
+                Toast.makeText(context, "请在系统设置中允许精确闹钟权限，否则无法定时提醒", Toast.LENGTH_LONG).show()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.parse("package:" + context.packageName)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                }
             }
         }
         fun cancelDailyReminder(context: Context) {
@@ -583,10 +602,10 @@ fun MyScreen(
         )
         fun checkAndRequestNotificationPermission(onGranted: () -> Unit) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                     onGranted()
                 } else {
-                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             } else {
                 onGranted()
@@ -612,7 +631,48 @@ fun MyScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("记账提醒", fontSize = 16.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("记账提醒", fontSize = 16.sp)
+                            Spacer(Modifier.width(4.dp))
+                            var showReminderTip by remember { mutableStateOf(false) }
+                            IconButton(
+                                onClick = { showReminderTip = true },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "定时提醒可靠性说明",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            if (showReminderTip) {
+                                AlertDialog(
+                                    onDismissRequest = { showReminderTip = false },
+                                    title = { Text("定时提醒可靠性说明", fontWeight = FontWeight.Bold) },
+                                    text = {
+                                        Text(
+                                            "为保证定时提醒可靠，请在系统设置中：\n- 允许自启动\n- 设置电池无限制\n- 允许后台弹窗/通知\n否则在后台或被杀死时可能无法收到提醒。",
+                                            fontSize = 15.sp
+                                        )
+                                    },
+                                    confirmButton = {
+                                        Button(onClick = {
+                                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                data = Uri.parse("package:" + context.packageName)
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            context.startActivity(intent)
+                                        }) {
+                                            Text("一键前往系统设置")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showReminderTip = false }) { Text("关闭") }
+                                    }
+                                )
+                            }
+                        }
                         Switch(
                             checked = reminderEnabled,
                             onCheckedChange = {
@@ -620,8 +680,8 @@ fun MyScreen(
                                 if (it) {
                                     checkAndRequestNotificationPermission {
                                         val parts = reminderTime.split(":")
-                                        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 20
-                                        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                                        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 21
+                                        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 30
                                         setDailyReminder(context, hour, minute)
                                     }
                                 } else {
@@ -638,57 +698,59 @@ fun MyScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("提醒时间: $reminderTime", fontSize = 15.sp)
-                            Button(onClick = {
-                                val parts = reminderTime.split(":")
-                                tempHour = parts.getOrNull(0)?.toIntOrNull() ?: 20
-                                tempMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0
-                                showTimePicker = true
-                            }) {
-                                Text("选择时间")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Button(onClick = {
+                                    val parts = reminderTime.split(":")
+                                    tempHour = parts.getOrNull(0)?.toIntOrNull() ?: 21
+                                    tempMinute = parts.getOrNull(1)?.toIntOrNull() ?: 30
+                                    timeDialogState.show()
+                                }) {
+                                    Text("选择时间")
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        if (showTimePicker && prefs != null) {
-            AlertDialog(
-                onDismissRequest = { showTimePicker = false },
-                title = { Text("选择提醒时间", fontWeight = FontWeight.Bold) },
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { tempHour = (tempHour + 23) % 24 }) {
-                            Icon(Icons.Filled.ArrowDownward, contentDescription = "减小时")
-                        }
-                        Text("%02d".format(tempHour), fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { tempHour = (tempHour + 1) % 24 }) {
-                            Icon(Icons.Filled.ArrowUpward, contentDescription = "加小时")
-                        }
-                        Text(":", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { tempMinute = (tempMinute + 59) % 60 }) {
-                            Icon(Icons.Filled.ArrowDownward, contentDescription = "减分钟")
-                        }
-                        Text("%02d".format(tempMinute), fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { tempMinute = (tempMinute + 1) % 60 }) {
-                            Icon(Icons.Filled.ArrowUpward, contentDescription = "加分钟")
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
+        // 记账提醒时间选择弹窗
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme,
+            typography = MaterialTheme.typography,
+            shapes = MaterialTheme.shapes,
+        ) {
+            MaterialDialog(
+                dialogState = timeDialogState,
+                backgroundColor = MaterialTheme.colorScheme.background,
+                shape = RoundedCornerShape(24.dp),
+                buttons = {
+                    positiveButton("确定")
+                    negativeButton("取消")
+                }
+            ) {
+                Box(Modifier.padding(top = 10.dp)) {
+                    timepicker(
+                        initialTime = LocalTime.of(tempHour, tempMinute),
+                        title = "选择提醒时间",
+                        is24HourClock = true,
+                        colors = TimePickerDefaults.colors(
+                            selectorTextColor = MaterialTheme.colorScheme.onBackground,
+                            inactiveTextColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            headerTextColor = MaterialTheme.colorScheme.onBackground
+                        )
+                    ) { time ->
+                        tempHour = time.hour
+                        tempMinute = time.minute
                         saveReminder(reminderEnabled, "%02d:%02d".format(tempHour, tempMinute))
                         if (reminderEnabled) {
                             checkAndRequestNotificationPermission {
                                 setDailyReminder(context, tempHour, tempMinute)
                             }
                         }
-                        showTimePicker = false
-                    }) { Text("确定") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+                        timeDialogState.hide()
+                    }
                 }
-            )
+            }
         }
         Spacer(Modifier.height(16.dp))
         // 关于与帮助
@@ -907,7 +969,7 @@ fun MyScreen(
                                                 var canInstall = true
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                                     if (!context.packageManager.canRequestPackageInstalls()) {
-                                                        val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                                                             data = Uri.parse("package:" + context.packageName)
                                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                                         }
