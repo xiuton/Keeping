@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,12 +22,20 @@ fun AllBillsScreen(
     allBills: List<BillItem>,
     onBack: () -> Unit
 ) {
+    var lastClickTime by remember { mutableStateOf(0L) }
+    var enabled by remember { mutableStateOf(true) }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("全部账单") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = {
+                            enabled = false
+                            onBack()
+                        },
+                        enabled = enabled
+                    ) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },

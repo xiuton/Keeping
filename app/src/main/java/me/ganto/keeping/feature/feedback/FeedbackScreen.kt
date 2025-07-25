@@ -9,16 +9,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedbackScreen(onBack: () -> Unit) {
+    var lastClickTime by remember { mutableStateOf(0L) }
+    var enabled by remember { mutableStateOf(true) }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("意见反馈") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = {
+                            enabled = false
+                            onBack()
+                        },
+                        enabled = enabled
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },
