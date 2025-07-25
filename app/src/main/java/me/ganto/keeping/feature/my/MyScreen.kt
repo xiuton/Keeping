@@ -40,7 +40,6 @@ import java.io.File
 import com.yalantis.ucrop.UCrop
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.background
 import java.io.InputStream
 import java.io.OutputStream
@@ -60,6 +59,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.FileOutputStream
 import java.io.IOException
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import android.app.AlarmManager
+import android.app.PendingIntent
+import java.util.Calendar
+import me.ganto.keeping.feature.my.ReminderReceiver
+import android.provider.Settings
+import android.content.pm.PackageManager
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -490,6 +497,200 @@ fun MyScreen(
             }
         }
         Spacer(Modifier.height(16.dp))
+        // 记账提醒独立板块
+        val REMINDER_ENABLED_KEY = stringPreferencesKey("reminder_enabled")
+        val REMINDER_TIME_KEY = stringPreferencesKey("reminder_time")
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        // 直接用collectAsState绑定DataStore
+        val prefsFlow = context.dataStore.data
+        val prefs by prefsFlow.collectAsState(initial = null)
+        val reminderEnabled = prefs?.get(REMINDER_ENABLED_KEY)?.toBoolean() ?: false
+        val reminderTime = prefs?.get(REMINDER_TIME_KEY) ?: "20:00"
+        var showTimePicker by remember { mutableStateOf(false) }
+        var tempHour by remember { mutableStateOf(20) }
+        var tempMinute by remember { mutableStateOf(0) }
+        fun saveReminder(enabled: Boolean, time: String) {
+            scope.launch {
+                context.dataStore.edit { prefs ->
+                    prefs[REMINDER_ENABLED_KEY] = enabled.toString()
+                    prefs[REMINDER_TIME_KEY] = time
+                }
+            }
+        }
+        fun setDailyReminder(context: Context, hour: Int, minute: Int) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (!alarmManager.canScheduleExactAlarms()) {
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.parse("package:" + context.packageName)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                    Toast.makeText(context, "请授权允许设置精确闹钟，否则无法定时提醒", Toast.LENGTH_LONG).show()
+                    return
+                }
+            }
+            val intent = Intent(context, ReminderReceiver::class.java).apply {
+                action = "me.ganto.keeping.ACTION_REMIND"
+                putExtra("hour", hour)
+                putExtra("minute", minute)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
+            }
+        }
+        fun cancelDailyReminder(context: Context) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, ReminderReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            alarmManager.cancel(pendingIntent)
+        }
+        // 通知权限请求Launcher（Android 13+）
+        val notificationPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                if (!granted) {
+                    Toast.makeText(context, "请在系统设置中开启通知权限，否则无法收到记账提醒！", Toast.LENGTH_LONG).show()
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                }
+            }
+        )
+        fun checkAndRequestNotificationPermission(onGranted: () -> Unit) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                    onGranted()
+                } else {
+                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+            } else {
+                onGranted()
+            }
+        }
+        // 始终渲染Card，只在内容区显示loading
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (prefs == null) {
+                    // 数据加载前显示loading占位符
+                    Box(
+                        Modifier
+                            .height(48.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    // 数据加载完成后显示真实内容
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("记账提醒", fontSize = 16.sp)
+                        Switch(
+                            checked = reminderEnabled,
+                            onCheckedChange = {
+                                saveReminder(it, reminderTime)
+                                if (it) {
+                                    checkAndRequestNotificationPermission {
+                                        val parts = reminderTime.split(":")
+                                        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 20
+                                        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                                        setDailyReminder(context, hour, minute)
+                                    }
+                                } else {
+                                    cancelDailyReminder(context)
+                                }
+                            }
+                        )
+                    }
+                    if (reminderEnabled) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("提醒时间: $reminderTime", fontSize = 15.sp)
+                            Button(onClick = {
+                                val parts = reminderTime.split(":")
+                                tempHour = parts.getOrNull(0)?.toIntOrNull() ?: 20
+                                tempMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                                showTimePicker = true
+                            }) {
+                                Text("选择时间")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (showTimePicker && prefs != null) {
+            AlertDialog(
+                onDismissRequest = { showTimePicker = false },
+                title = { Text("选择提醒时间", fontWeight = FontWeight.Bold) },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { tempHour = (tempHour + 23) % 24 }) {
+                            Icon(Icons.Filled.ArrowDownward, contentDescription = "减小时")
+                        }
+                        Text("%02d".format(tempHour), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { tempHour = (tempHour + 1) % 24 }) {
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = "加小时")
+                        }
+                        Text(":", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { tempMinute = (tempMinute + 59) % 60 }) {
+                            Icon(Icons.Filled.ArrowDownward, contentDescription = "减分钟")
+                        }
+                        Text("%02d".format(tempMinute), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { tempMinute = (tempMinute + 1) % 60 }) {
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = "加分钟")
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        saveReminder(reminderEnabled, "%02d:%02d".format(tempHour, tempMinute))
+                        if (reminderEnabled) {
+                            checkAndRequestNotificationPermission {
+                                setDailyReminder(context, tempHour, tempMinute)
+                            }
+                        }
+                        showTimePicker = false
+                    }) { Text("确定") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+                }
+            )
+        }
+        Spacer(Modifier.height(16.dp))
         // 关于与帮助
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -535,17 +736,16 @@ fun MyScreen(
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                            Text(
-                                "测试页面入口",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        Text(
+                            "测试页面入口",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
-            Spacer(Modifier.height(16.dp))
+        }
     }
     // 头像/昵称编辑弹窗
     if (showDialog) {
