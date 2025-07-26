@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.ganto.keeping.core.model.BillItem
+import me.ganto.keeping.core.util.MoneyUtils
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
@@ -54,7 +55,7 @@ fun StatisticsScreen(
     }
     val totalIncome = monthBills.filter { it.amount > 0 }.sumOf { it.amount }
     val totalExpense = monthBills.filter { it.amount < 0 }.sumOf { it.amount }
-    val balance = totalIncome + totalExpense
+    val balance = MoneyUtils.calculateBalance(totalIncome, totalExpense)
     val expenseByCategory = monthBills.filter { it.amount < 0 }.groupBy { it.category }.mapValues { it.value.sumOf { b -> -b.amount } }
     val incomeByCategory = monthBills.filter { it.amount > 0 }.groupBy { it.category }.mapValues { it.value.sumOf { b -> b.amount } }
 
@@ -185,7 +186,7 @@ fun CategoryStatList(categoryMap: Map<String, Double>, isExpense: Boolean) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(cat, fontWeight = FontWeight.Medium)
-                Text("¥%.2f".format(amt), color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary)
+                Text("¥${MoneyUtils.formatMoney(amt)}", color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary)
             }
         }
     }

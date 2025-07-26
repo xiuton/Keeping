@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.ganto.keeping.core.model.BillItem
+import me.ganto.keeping.core.util.MoneyUtils
 import me.ganto.keeping.theme.CategoryBlue
 import me.ganto.keeping.theme.CategoryGreen
 import me.ganto.keeping.theme.CategoryGrey
@@ -148,7 +149,7 @@ fun BillHomeScreen(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "¥${-expense}",
+                            text = "¥${MoneyUtils.formatMoney(-expense)}",
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold,
                             fontSize = 26.sp
@@ -167,7 +168,7 @@ fun BillHomeScreen(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "¥$income",
+                            text = "¥${MoneyUtils.formatMoney(income)}",
                             color = MaterialTheme.colorScheme.tertiary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 26.sp
@@ -181,8 +182,8 @@ fun BillHomeScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("结余", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
                     Text(
-                        text = "¥${income + expense}",
-                        color = if (income + expense >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        text = "¥${MoneyUtils.formatBalance(income, expense)}",
+                        color = if (MoneyUtils.calculateBalance(income, expense) >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 18.sp
                     )
