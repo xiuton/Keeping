@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.sp
 import me.ganto.keeping.core.model.BillItem
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -43,7 +42,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.ui.platform.LocalConfiguration
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -182,9 +180,6 @@ fun AddBillScreen(
         }
     ) { innerPadding ->
         val scrollState = rememberScrollState()
-        val configuration = LocalConfiguration.current
-        val screenWidth = configuration.screenWidthDp.dp
-        val itemWidth = (screenWidth - 24.dp * 2 - 8.dp * 3) / 4
 
         Column(
             modifier = Modifier
@@ -196,16 +191,16 @@ fun AddBillScreen(
         ) {
             // 分类选择平铺
             Text("分类", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = 200.dp)
             ) {
-                categories.forEach { item ->
+                items(categories) { item ->
                     val selected = item == category
                     Card(
                         modifier = Modifier
-                            .width(itemWidth)
                             .aspectRatio(1.8f)
                             .clickable {
                                 if (type == "支出") selectExpenseCategory(item) else selectIncomeCategory(item)
@@ -236,16 +231,16 @@ fun AddBillScreen(
             }
             // 方式选择平铺
             Text("方式", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = 200.dp)
             ) {
-                payTypes.forEach { item ->
+                items(payTypes) { item ->
                     val selected = item == payType
                     Card(
                         modifier = Modifier
-                            .width(itemWidth)
                             .aspectRatio(1.8f)
                             .clickable {
                                 if (type == "支出") selectExpensePayType(item) else selectIncomePayType(item)
