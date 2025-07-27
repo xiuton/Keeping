@@ -53,6 +53,7 @@ import androidx.compose.foundation.layout.FlowRow
 import me.ganto.keeping.core.data.DefaultValues
 import android.net.Uri
 import java.io.InputStream
+import androidx.compose.foundation.BorderStroke
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -313,9 +314,12 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Card {
+        Card(
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("管理类型", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(8.dp))
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -335,7 +339,9 @@ fun SettingsScreen(
                 }
             }
         }
-        Card {
+        Card(
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
         Text("分类管理", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -351,12 +357,6 @@ fun SettingsScreen(
         singleLine = true,
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier.weight(1f),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            focusedContainerColor = MaterialTheme.colorScheme.background,
-            unfocusedContainerColor = MaterialTheme.colorScheme.background
-        ),
         textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
     )
     Button(
@@ -380,40 +380,40 @@ fun SettingsScreen(
                 chunkedCategories.forEach { rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                         rowItems.forEach { category ->
                         Card(
                             modifier = Modifier
                                     .weight(1f)
-                                    .padding(2.dp)
-                                    .defaultMinSize(minHeight = 80.dp)
+                                    .padding(4.dp)
+                                    .defaultMinSize(minHeight = 90.dp)
                                 .clickable {
                                     showEditDialog = "category" to category
                                     editText = category
                                 },
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                                containerColor = MaterialTheme.colorScheme.surface
                             ),
                             elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                                        .padding(8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
                                     text = category,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp,
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         modifier = Modifier.fillMaxWidth()
                                     )
-                                    Spacer(Modifier.height(4.dp))
+                                    Spacer(Modifier.height(6.dp))
                                     Row(
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
@@ -429,12 +429,13 @@ fun SettingsScreen(
                                                 }
                                             },
                                             enabled = currentCategories.indexOf(category) > 0,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.ArrowUpward,
                                                 contentDescription = "上移",
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(18.dp),
+                                                tint = if (currentCategories.indexOf(category) > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                         IconButton(
@@ -448,12 +449,13 @@ fun SettingsScreen(
                                                 }
                                             },
                                             enabled = currentCategories.indexOf(category) < currentCategories.size - 1,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.ArrowDownward,
                                                 contentDescription = "下移",
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(18.dp),
+                                                tint = if (currentCategories.indexOf(category) < currentCategories.size - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -465,12 +467,12 @@ fun SettingsScreen(
                                         ) {
                                     IconButton(
                                         onClick = { showDeleteDialog = "category" to category },
-                                                modifier = Modifier.size(22.dp)
+                                                modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
                                             contentDescription = "删除",
-                                                    modifier = Modifier.size(16.dp),
+                                                    modifier = Modifier.size(18.dp),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -486,7 +488,9 @@ fun SettingsScreen(
                 }
             }
         }
-        Card {
+        Card(
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = if (selectedType == "支出") "支付方式管理" else "收入方式管理",
@@ -506,12 +510,6 @@ fun SettingsScreen(
         singleLine = true,
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier.weight(1f),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            focusedContainerColor = MaterialTheme.colorScheme.background,
-            unfocusedContainerColor = MaterialTheme.colorScheme.background
-        ),
         textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
     )
     Button(
@@ -535,40 +533,40 @@ fun SettingsScreen(
                 chunkedPayTypes.forEach { rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                         rowItems.forEach { payType ->
                         Card(
                             modifier = Modifier
                                     .weight(1f)
-                                    .padding(2.dp)
-                                    .defaultMinSize(minHeight = 80.dp)
+                                    .padding(4.dp)
+                                    .defaultMinSize(minHeight = 90.dp)
                                 .clickable {
                                     showEditDialog = "payType" to payType
                                     editText = payType
                                 },
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer // 使用浅色背景
+                                containerColor = MaterialTheme.colorScheme.surface
                             ),
                             elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                                        .padding(8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
                                     text = payType,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp,
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         modifier = Modifier.fillMaxWidth()
                                     )
-                                    Spacer(Modifier.height(4.dp))
+                                    Spacer(Modifier.height(6.dp))
                                     Row(
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
@@ -584,12 +582,13 @@ fun SettingsScreen(
                                                 }
                                             },
                                             enabled = currentPayTypes.indexOf(payType) > 0,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.ArrowUpward,
                                                 contentDescription = "上移",
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(18.dp),
+                                                tint = if (currentPayTypes.indexOf(payType) > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                         IconButton(
@@ -603,12 +602,13 @@ fun SettingsScreen(
                                                 }
                                             },
                                             enabled = currentPayTypes.indexOf(payType) < currentPayTypes.size - 1,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.ArrowDownward,
                                                 contentDescription = "下移",
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(18.dp),
+                                                tint = if (currentPayTypes.indexOf(payType) < currentPayTypes.size - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -620,12 +620,12 @@ fun SettingsScreen(
                                         ) {
                                     IconButton(
                                         onClick = { showDeleteDialog = "payType" to payType },
-                                                modifier = Modifier.size(22.dp)
+                                                modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
                                             contentDescription = "删除",
-                                                    modifier = Modifier.size(16.dp),
+                                                    modifier = Modifier.size(18.dp),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -643,7 +643,9 @@ fun SettingsScreen(
         }
         
         // 备份管理卡片
-        Card {
+        Card(
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("数据备份", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
@@ -700,8 +702,9 @@ fun SettingsScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                elevation = CardDefaults.cardElevation(0.dp)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(
@@ -813,7 +816,10 @@ fun SettingsScreen(
                 OutlinedTextField(
                     value = editText,
                     onValueChange = { editText = it },
-                    singleLine = true
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
                 )
             },
             confirmButton = {

@@ -75,7 +75,7 @@ fun StatisticsScreen(
             Box(
                 modifier = Modifier
                     .size(10.dp)
-                    .background(Color(0xFF4CAF50), shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
             )
             Spacer(Modifier.width(4.dp))
             Text("收入", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -83,7 +83,7 @@ fun StatisticsScreen(
             Box(
                 modifier = Modifier
                     .size(10.dp)
-                    .background(Color(0xFFF44336), shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.error, shape = CircleShape)
             )
             Spacer(Modifier.width(4.dp))
             Text("支出", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -94,10 +94,12 @@ fun StatisticsScreen(
             LazyBarChart(monthBills, year, month, chartHeight = 200.dp)
         }
         // 每日收支趋势标题
+        Spacer(modifier = Modifier.height(16.dp))
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text("每日收支趋势", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         }
         // 分类统计
+        Spacer(modifier = Modifier.height(16.dp))
         Text("支出分类占比", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
         if (expenseByCategory.isNotEmpty()) {
             CategoryStatList(expenseByCategory, isExpense = true)
@@ -186,7 +188,7 @@ fun CategoryStatList(categoryMap: Map<String, Double>, isExpense: Boolean) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(cat, fontWeight = FontWeight.Medium)
-                Text("¥${MoneyUtils.formatMoney(amt)}", color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary)
+                Text("¥${MoneyUtils.formatMoney(amt)}", color = if (isExpense) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -267,7 +269,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                             .height(balanceHeight)
                                             .width(barWidth)
                                             .clip(RoundedCornerShape(12.dp))
-                                            .background(Color(0xFFF44336).copy(alpha = 0.7f))
+                                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
                                     )
                                 }
                                 // 收入柱
@@ -276,7 +278,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                         .height(incomeHeight)
                                         .width(barWidth)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFF4CAF50))
+                                        .background(MaterialTheme.colorScheme.primary)
                                 )
                             } else {
                                 // 占位符
@@ -285,7 +287,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                         .fillMaxHeight()
                                         .width(barWidth)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFFEEEEEE).copy(alpha = 0.4f))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                                 )
                             }
                         }
@@ -308,7 +310,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                 // Text on top of bar
                                 Text(
                                     text = incomeStr,
-                                color = Color(0xFF4CAF50),
+                                color = MaterialTheme.colorScheme.primary,
                                     fontSize = 10.sp,
                                     maxLines = 1,
                                     modifier = Modifier
@@ -334,7 +336,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                 } else {
                                     Text(
                                         text = "-${balanceHeight.value.toInt()}",
-                                        color = Color(0xFFF44336),
+                                        color = MaterialTheme.colorScheme.error,
                                         fontSize = 10.sp,
                                         maxLines = 1,
                                         modifier = Modifier
@@ -364,7 +366,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                             .height(balanceHeight)
                                             .width(barWidth)
                                             .clip(RoundedCornerShape(12.dp))
-                                            .background(Color(0xFF4CAF50).copy(alpha = 0.7f))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
                                     )
                                 }
                                 // 支出柱
@@ -373,7 +375,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                         .height(expenseHeight)
                                         .width(barWidth)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFFF44336))
+                                        .background(MaterialTheme.colorScheme.error)
                                 )
                             } else {
                                 // 占位符
@@ -382,7 +384,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                         .fillMaxHeight()
                                         .width(barWidth)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Color(0xFFBDBDBD).copy(alpha = 0.1f))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f))
                                 )
                             }
                         }
@@ -405,7 +407,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                 // Text on top of bar
                                 Text(
                                     text = expenseStr,
-                                    color = Color(0xFFF44336),
+                                    color = MaterialTheme.colorScheme.error,
                                     fontSize = 10.sp,
                                     maxLines = 1,
                                     modifier = Modifier
@@ -431,7 +433,7 @@ fun LazyBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
                                 } else {
                                     Text(
                                         text = "+${balanceHeight.value.toInt()}",
-                            color = Color(0xFF4CAF50),
+                            color = MaterialTheme.colorScheme.primary,
                                         fontSize = 10.sp,
                                         maxLines = 1,
                                         modifier = Modifier

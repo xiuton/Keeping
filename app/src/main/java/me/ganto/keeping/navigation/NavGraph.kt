@@ -233,12 +233,7 @@ fun NavGraph(
                                         }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = when (navIndex) {
-                                        0 -> MaterialTheme.colorScheme.primaryContainer
-                                        1 -> MaterialTheme.colorScheme.tertiaryContainer
-                                        2 -> MaterialTheme.colorScheme.secondaryContainer
-                                        else -> MaterialTheme.colorScheme.surface
-                                    }
+                                    containerColor = MaterialTheme.colorScheme.surface
                                 )
                             )
                             }

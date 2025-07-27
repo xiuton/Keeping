@@ -66,6 +66,12 @@ import java.util.Calendar
 import android.provider.Settings
 import android.content.pm.PackageManager
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Feedback
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.ArrowForward
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
@@ -76,6 +82,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.BorderStroke
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -154,8 +161,8 @@ fun MyScreen(
                     setShowCropGrid(false)
                     setHideBottomControls(true)
                     setToolbarTitle("裁剪头像")
-                    setToolbarColor(0xFF6C63FF.toInt())
-                    setStatusBarColor(0xFF6C63FF.toInt())
+                    setToolbarColor(0xFF22C55E.toInt())
+                    setStatusBarColor(0xFF22C55E.toInt())
                 })
             val intent = uCrop.getIntent(context)
             cropLauncher.launch(intent)
@@ -473,26 +480,41 @@ fun MyScreen(
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("深色模式", fontSize = 16.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.DarkMode,
+                            contentDescription = "深色模式",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("深色模式", fontSize = 16.sp)
+                    }
                     Switch(checked = isDark, onCheckedChange = onDarkChange)
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Spacer(Modifier.height(16.dp))
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { checkUpdate() }
-                        .padding(vertical = 4.dp),
+                        .clickable { checkUpdate() },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("检查更新", fontSize = 16.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.SystemUpdate,
+                            contentDescription = "检查更新",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("检查更新", fontSize = 16.sp)
+                    }
                     if (checking) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
@@ -521,7 +543,7 @@ fun MyScreen(
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         // 记账提醒独立板块
         val REMINDER_ENABLED_KEY = stringPreferencesKey("reminder_enabled")
         val REMINDER_TIME_KEY = stringPreferencesKey("reminder_time")
@@ -647,9 +669,16 @@ fun MyScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("记账提醒", fontSize = 16.sp)
-                            Spacer(Modifier.width(4.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = "记账提醒",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text("记账提醒", fontSize = 16.sp)
+                        Spacer(Modifier.width(4.dp))
                             var showReminderTip by remember { mutableStateOf(false) }
                             IconButton(
                                 onClick = { showReminderTip = true },
@@ -707,7 +736,7 @@ fun MyScreen(
                         )
                     }
                     if (reminderEnabled) {
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(12.dp))
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -767,8 +796,8 @@ fun MyScreen(
                     }
                 }
             }
-        }
-        Spacer(Modifier.height(16.dp))
+                }
+        Spacer(Modifier.height(20.dp))
         // 关于与帮助
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -776,15 +805,19 @@ fun MyScreen(
                     Modifier
                         .fillMaxWidth()
                         .clickable { navController.navigate(ROUTE_FEEDBACK) }
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = Icons.Filled.Feedback,
+                        contentDescription = "意见反馈",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
                     Text("意见反馈", fontSize = 16.sp)
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Spacer(Modifier.height(12.dp))
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -795,25 +828,41 @@ fun MyScreen(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = "关于App",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
                     Text("关于App", fontSize = 16.sp)
                 }
             }
         }
         if (testEntryVisible) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
             // 测试页面入口板块
-            Card {
+            Card(
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         Modifier
                             .fillMaxWidth()
                             .clickable { navController.navigate("test") }
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Icon(
+                            imageVector = Icons.Filled.BugReport,
+                            contentDescription = "测试页面入口",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
                         Text(
                             "测试页面入口",
                             fontSize = 16.sp,
@@ -838,7 +887,7 @@ fun MyScreen(
                             modifier = Modifier
                                 .size(80.dp)
                                 .clickable { launcher.launch("image/*") },
-                            elevation = CardDefaults.cardElevation(2.dp)
+                            elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                             if (avatarUri.isNotBlank()) {
                                 AsyncImage(

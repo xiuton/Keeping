@@ -125,7 +125,7 @@ fun AddBillScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
                 Row(
@@ -133,7 +133,7 @@ fun AddBillScreen(
                         .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)
                         .height(40.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .background(MaterialTheme.colorScheme.surface),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val tabModifier = Modifier
@@ -207,10 +207,9 @@ fun AddBillScreen(
                                         if (type == "支出") selectExpenseCategory(item) else selectIncomeCategory(item)
                                     },
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                                    containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                                 ),
-                                elevation = CardDefaults.cardElevation(0.dp),
-                                border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                                elevation = CardDefaults.cardElevation(0.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -220,7 +219,7 @@ fun AddBillScreen(
                                 ) {
                                     Text(
                                         text = item,
-                                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                         fontSize = 15.sp,
                                         textAlign = TextAlign.Center,
@@ -237,6 +236,7 @@ fun AddBillScreen(
                 }
             }
             // 方式选择平铺
+            Spacer(modifier = Modifier.height(16.dp))
             Text("方式", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -256,10 +256,9 @@ fun AddBillScreen(
                                         if (type == "支出") selectExpensePayType(item) else selectIncomePayType(item)
                                     },
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                                    containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                                 ),
-                                elevation = CardDefaults.cardElevation(0.dp),
-                                border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                                elevation = CardDefaults.cardElevation(0.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -269,7 +268,7 @@ fun AddBillScreen(
                                 ) {
                                     Text(
                                         text = item,
-                                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                         fontSize = 15.sp,
                                         textAlign = TextAlign.Center,
@@ -286,6 +285,7 @@ fun AddBillScreen(
                 }
             }
             // 金额输入框
+            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = amount,
                 onValueChange = { input ->

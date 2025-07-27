@@ -24,13 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.ganto.keeping.core.model.BillItem
 import me.ganto.keeping.core.util.MoneyUtils
-import me.ganto.keeping.theme.CategoryBlue
-import me.ganto.keeping.theme.CategoryGreen
-import me.ganto.keeping.theme.CategoryGrey
-import me.ganto.keeping.theme.CategoryOrange
-import me.ganto.keeping.theme.CategoryPurple
-import me.ganto.keeping.theme.CategoryRed
-import me.ganto.keeping.theme.CategoryTeal
+
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -128,7 +122,7 @@ fun BillHomeScreen(
                 .padding(bottom = 8.dp),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            elevation = CardDefaults.cardElevation(3.dp)
+            elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(Modifier.padding(vertical = 24.dp, horizontal = 20.dp)) {
                 Row(
@@ -161,15 +155,15 @@ fun BillHomeScreen(
                             Box(
                                 Modifier
                                     .size(16.dp)
-                                    .background(MaterialTheme.colorScheme.tertiary, shape = CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("收入", color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            Text("收入", color = MaterialTheme.colorScheme.primary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = "¥${MoneyUtils.formatMoney(income)}",
-                            color = MaterialTheme.colorScheme.tertiary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 26.sp
                         )
@@ -433,13 +427,13 @@ fun BillRow(
 ) {
     var showConfirm by remember { mutableStateOf(false) }
     val categoryColor = when (bill.category) {
-        "收入" -> CategoryGreen
-        "餐饮" -> CategoryOrange
-        "交通" -> CategoryBlue
-        "购物" -> CategoryPurple
-        "娱乐" -> CategoryTeal
-        "医疗" -> CategoryRed
-        else -> CategoryGrey
+        "收入" -> MaterialTheme.colorScheme.primary
+        "餐饮" -> MaterialTheme.colorScheme.primary
+        "交通" -> MaterialTheme.colorScheme.primary
+        "购物" -> MaterialTheme.colorScheme.primary
+        "娱乐" -> MaterialTheme.colorScheme.primary
+        "医疗" -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.primary
     }
     Card(
         modifier = Modifier
@@ -504,7 +498,7 @@ fun BillRow(
             ) {
                 Text(
                     (if (bill.amount > 0) "+" else "") + "¥" + String.format("%.2f", bill.amount),
-                    color = if (bill.amount > 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                                            color = if (bill.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -583,9 +577,9 @@ fun AddBillDialog(
                                 .widthIn(min = 64.dp, max = 120.dp)
                                 .clickable { category = item },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                             ),
-                            elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp)
+                            elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -594,7 +588,7 @@ fun AddBillDialog(
                             ) {
                                 Text(
                                     text = item,
-                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
@@ -615,9 +609,9 @@ fun AddBillDialog(
                                 .widthIn(min = 64.dp, max = 120.dp)
                                 .clickable { payType = item },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                             ),
-                            elevation = CardDefaults.cardElevation(if (selected) 4.dp else 0.dp)
+                            elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -626,7 +620,7 @@ fun AddBillDialog(
                             ) {
                                 Text(
                                     text = item,
-                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
@@ -842,7 +836,7 @@ fun BillPreviewDialog(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("金额：", fontWeight = FontWeight.Medium, fontSize = 18.sp)
                     Text((if (bill.amount > 0) "+" else "") + "¥" + String.format("%.2f", bill.amount),
-                        color = if (bill.amount > 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                        color = if (bill.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp)
                 }

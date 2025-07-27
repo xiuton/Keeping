@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                 }
                 return@setContent
             }
-            KeepingTheme(darkTheme = isDark, dynamicColor = true) {
+            KeepingTheme(darkTheme = isDark) {
                 NavGraph(
                     bills = bills,
                     saveBills = ::saveBills,
