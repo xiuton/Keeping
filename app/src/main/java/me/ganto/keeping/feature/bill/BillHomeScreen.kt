@@ -4,10 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.LazyListState
+
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -95,14 +95,6 @@ fun BillHomeScreen(
             matchMonth && day == filterDay
         }
     }
-    var listState: LazyListState by remember(filteredBills.size, filterDate, currentYearMonth) { mutableStateOf(LazyListState()) }
-    LaunchedEffect(bills.size) {
-        if (bills.isNotEmpty() && bills.size > prevCount.value) {
-            listState.scrollToItem(0)
-        }
-        prevCount.value = bills.size
-    }
-    // 不再需要LaunchedEffect重置滚动，直接重建listState即可
     val scrollState = rememberScrollState()
 
     Column(
@@ -376,8 +368,10 @@ fun BillHomeScreen(
                 )
             }
         }
-        LazyColumn(modifier = Modifier.weight(1f), state = listState, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            itemsIndexed(filteredBills, key = { _, bill -> bill.id }) { index, bill ->
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            filteredBills.forEach { bill ->
                 BillRow(
                     bill = bill,
                     onDelete = { onDelete(bill) },
@@ -435,18 +429,21 @@ fun BillRow(
         "医疗" -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.primary
     }
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onEdit() },
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        elevation = CardDefaults.cardElevation(1.dp)
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 左侧：分类色块+分类名
@@ -482,7 +479,9 @@ fun BillRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         bill.category,
-                        fontSize = 13.sp
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -504,7 +503,7 @@ fun BillRow(
                 )
                 Text(
                     bill.time,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
@@ -562,67 +561,94 @@ fun AddBillDialog(
         shape = MaterialTheme.shapes.large,
         title = { Text(if (bill == null) "新增账单" else "编辑账单") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxHeight(0.8f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 // 分类选择
                 Text("分类", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    categories.forEach { item ->
-                        val selected = item == category
-                        Card(
-                            modifier = Modifier
-                                .widthIn(min = 64.dp, max = 120.dp)
-                                .clickable { category = item },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                            elevation = CardDefaults.cardElevation(0.dp)
+                    categories.chunked(4).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item,
-                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                                )
+                            rowItems.forEach { item ->
+                                val selected = item == category
+                                Card(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { category = item },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    elevation = CardDefaults.cardElevation(0.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = item,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 14.sp,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                            // 填充剩余空间
+                            repeat(4 - rowItems.size) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
                 }
                 // 方式选择
                 Text("方式", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    payTypes.forEach { item ->
-                        val selected = item == payType
-                        Card(
-                            modifier = Modifier
-                                .widthIn(min = 64.dp, max = 120.dp)
-                                .clickable { payType = item },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                            elevation = CardDefaults.cardElevation(0.dp)
+                    payTypes.chunked(4).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item,
-                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                                )
+                            rowItems.forEach { item ->
+                                val selected = item == payType
+                                Card(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { payType = item },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    elevation = CardDefaults.cardElevation(0.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = item,
+                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 14.sp,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                            // 填充剩余空间
+                            repeat(4 - rowItems.size) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }

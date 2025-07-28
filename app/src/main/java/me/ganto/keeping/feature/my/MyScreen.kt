@@ -414,12 +414,12 @@ fun MyScreen(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
                         contentDescription = "添加/更换背景图",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -481,7 +481,8 @@ fun MyScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(48.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -501,6 +502,7 @@ fun MyScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .height(48.dp)
                         .clickable { checkUpdate() },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -665,7 +667,9 @@ fun MyScreen(
                 } else {
                     // 数据加载完成后显示真实内容
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -804,8 +808,8 @@ fun MyScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { navController.navigate(ROUTE_FEEDBACK) }
-                        .padding(vertical = 12.dp),
+                        .height(48.dp)
+                        .clickable { navController.navigate(ROUTE_FEEDBACK) },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -821,14 +825,14 @@ fun MyScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .height(48.dp)
                             .clickable {
                                 Toast.makeText(
                                     context,
                                     "Keeping App Version: $currentVersion",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                            }
-                        .padding(vertical = 12.dp),
+                            },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -852,8 +856,8 @@ fun MyScreen(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable { navController.navigate("test") }
-                            .padding(vertical = 12.dp),
+                            .height(48.dp)
+                            .clickable { navController.navigate("test") },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
