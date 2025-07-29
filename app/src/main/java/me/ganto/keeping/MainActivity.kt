@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // 允许内容延伸到系统栏下方
+        
+        // 检查是否从通知点击进入，需要跳转到新增账单界面
+        val shouldOpenAddBill = intent.getBooleanExtra("open_add_bill", false)
         setContent {
             // 这里直接调用 NavGraph，传递所需参数
             val context = LocalContext.current
@@ -135,24 +138,25 @@ class MainActivity : ComponentActivity() {
                 return@setContent
             }
             KeepingTheme(darkTheme = isDark) {
-                NavGraph(
-                    bills = bills,
-                    saveBills = ::saveBills,
-                    isDark = isDark,
-                    saveDarkMode = ::saveDarkMode,
-                    sortBy = sortBy,
-                    saveSortBy = ::saveSortBy,
-                    expenseCategories = expenseCategories,
-                    incomeCategories = incomeCategories,
-                    expensePayTypes = expensePayTypes,
-                    incomePayTypes = incomePayTypes,
-                    navIndex = navIndex,
-                    setNavIndex = { navIndex = it },
-                    showAddDialog = showAddDialog,
-                    setShowAddDialog = { showAddDialog = it },
-                    backupManager = backupManager,
-                    collectSettingsData = ::collectSettingsData
-                )
+                            NavGraph(
+                bills = bills,
+                saveBills = ::saveBills,
+                isDark = isDark,
+                saveDarkMode = ::saveDarkMode,
+                sortBy = sortBy,
+                saveSortBy = ::saveSortBy,
+                expenseCategories = expenseCategories,
+                incomeCategories = incomeCategories,
+                expensePayTypes = expensePayTypes,
+                incomePayTypes = incomePayTypes,
+                navIndex = navIndex,
+                setNavIndex = { navIndex = it },
+                showAddDialog = showAddDialog,
+                setShowAddDialog = { showAddDialog = it },
+                backupManager = backupManager,
+                collectSettingsData = ::collectSettingsData,
+                shouldOpenAddBill = shouldOpenAddBill
+            )
             }
         }
     }

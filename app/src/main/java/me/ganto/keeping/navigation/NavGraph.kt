@@ -58,7 +58,8 @@ fun NavGraph(
     showAddDialog: Boolean,
     setShowAddDialog: (Boolean) -> Unit,
     backupManager: BackupManager,
-    collectSettingsData: () -> Map<String, String>
+    collectSettingsData: () -> Map<String, String>,
+    shouldOpenAddBill: Boolean = false
 ) {
     val navController = rememberNavController()
     // Add state for currentYearMonth as Pair<Int, Int>
@@ -67,6 +68,13 @@ fun NavGraph(
     val onYearMonthChange: (Pair<Int, Int>) -> Unit = { currentYearMonth.value = it }
     // 新增：日期选择弹窗状态
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    
+    // 处理通知跳转到新增账单界面
+    LaunchedEffect(shouldOpenAddBill) {
+        if (shouldOpenAddBill) {
+            navController.navigate(ROUTE_ADD_BILL)
+        }
+    }
     KeepingTheme(darkTheme = isDark) {
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()

@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import me.ganto.keeping.R
 import android.app.AlarmManager
 import android.app.PendingIntent
+import me.ganto.keeping.MainActivity
 
 class ReminderReceiver : BroadcastReceiver() {
     @SuppressLint("ScheduleExactAlarm")
@@ -54,11 +55,21 @@ class ReminderReceiver : BroadcastReceiver() {
             val channel = NotificationChannel(channelId, "记账提醒", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
+        // 创建跳转到新增账单界面的Intent
+        val notificationIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_add_bill", true)
+        }
+        val notificationPendingIntent = PendingIntent.getActivity(
+            context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
         val notification = NotificationCompat.Builder(context, channelId)
             .setContentTitle("记账提醒")
-            .setContentText("今天是否记账了？")
+            .setContentText("今天是否记账了？点击直接记账")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setAutoCancel(true)
+            .setContentIntent(notificationPendingIntent)
             .build()
         notificationManager.notify(1001, notification)
 
