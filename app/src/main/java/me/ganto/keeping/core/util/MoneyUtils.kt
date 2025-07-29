@@ -54,4 +54,34 @@ object MoneyUtils {
         val balance = calculateBalance(income, expense)
         return formatMoney(balance)
     }
+    
+    /**
+     * 格式化简化数字显示，使用k、w等符号
+     */
+    fun formatSimpleMoney(amount: Double): String {
+        return when {
+            amount >= 10000 -> {
+                val wan = amount / 10000
+                if (wan >= 10) {
+                    "${wan.toInt()}w"
+                } else {
+                    "${String.format("%.1f", wan)}w"
+                }
+            }
+            amount >= 1000 -> {
+                val qian = amount / 1000
+                if (qian >= 10) {
+                    "${qian.toInt()}k"
+                } else {
+                    "${String.format("%.1f", qian)}k"
+                }
+            }
+            amount >= 100 -> {
+                amount.toInt().toString()
+            }
+            else -> {
+                String.format("%.0f", amount)
+            }
+        }
+    }
 } 

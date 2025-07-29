@@ -103,8 +103,8 @@ fun StatisticsScreen(
             Text("支出", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         // 柱状图
-        Box(modifier = Modifier.border(1.dp, Color.Red, shape = RoundedCornerShape(8.dp))) {
-            VicoBarChart(monthBills, year, month, chartHeight = 200.dp)
+        Box {
+            VicoBarChart(monthBills, year, month, chartHeight = 100.dp)
         }
         // 每日收支趋势标题
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -259,6 +259,9 @@ fun VicoBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
     calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
     val daysInMonth = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
     
+    // 计算最大值用于Y轴刻度
+    val maxValue = dayMap.values.maxOfOrNull { maxOf(it.first, it.second) } ?: 0.0
+    
     // 创建收入数据
     val incomeData = mutableListOf<Pair<Number, Number>>()
     val expenseData = mutableListOf<Pair<Number, Number>>()
@@ -269,63 +272,151 @@ fun VicoBarChart(bills: List<BillItem>, year: Int, month: Int, chartHeight: Dp) 
         expenseData.add(Pair(day, expense))
     }
     
-    // 使用LazyRow实现更好的柱状图
-    LazyRow(
+    Row(
         modifier = Modifier
-            .height(chartHeight + 40.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
+            .height(chartHeight + 20.dp)
+            .padding(start = 16.dp),
+        horizontalArrangement = Arrangement.Start
     ) {
-        items((1..daysInMonth).toList()) { day ->
-            val (income, expense) = dayMap[day] ?: (0.0 to 0.0)
-            val maxValue = maxOf(income, expense)
-            val maxHeight = chartHeight.value - 20.dp.value
-            
+        // Y轴标签
+        if (maxValue > 0) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Bottom,
-                modifier = Modifier.width(20.dp)
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .height(chartHeight),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.End
             ) {
-                // 柱状图区域
-                Row(
+                // 最大值标签
+                Text(
+                    text = "¥${MoneyUtils.formatSimpleMoney(maxValue)}",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.offset(y = (-5).dp) // 向上偏移以对齐辅助线
+                )
+                
+                // 中间值标签
+                Text(
+                    text = "¥${MoneyUtils.formatSimpleMoney(maxValue / 2)}",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.End
+                )
+                
+                // 最小值标签（0）
+                Text(
+                    text = "¥0",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.offset(y = 5.dp) // 向下偏移以对齐辅助线
+                )
+            }
+        }
+        
+        // 柱状图区域
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(chartHeight + 20.dp)
+        ) {
+            // 水平辅助线
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 20.dp), // 为日期标签留出空间
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 顶部辅助线（最大值）
+                if (maxValue > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    )
+                }
+                
+                // 中间辅助线（中间值）
+                if (maxValue > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    )
+                }
+                
+                // 底部辅助线（0值）
+                Box(
                     modifier = Modifier
-                        .height(chartHeight)
-                        .width(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    // 收入柱
-                    if (income > 0) {
-                        val incomeHeight = if (maxValue > 0) (maxHeight * (income / maxValue)).toFloat().coerceAtLeast(4f) else 4f
-                        Box(
-                            modifier = Modifier
-                                .height(incomeHeight.dp)
-                                .width(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                    }
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                )
+            }
+            
+            // 柱状图和日期标签（同步滚动）
+            LazyRow(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(end = 16.dp),
+            ) {
+                items((1..daysInMonth).toList()) { day ->
+                    val (income, expense) = dayMap[day] ?: (0.0 to 0.0)
+                    val localMaxValue = maxOf(income, expense)
+                    val maxHeight = chartHeight.value
                     
-                    // 支出柱
-                    if (expense > 0) {
-                        val expenseHeight = if (maxValue > 0) (maxHeight * (expense / maxValue)).toFloat().coerceAtLeast(4f) else 4f
-                        Box(
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.width(20.dp)
+                    ) {
+                        // 柱状图区域
+                        Row(
                             modifier = Modifier
-                                .height(expenseHeight.dp)
-                                .width(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(MaterialTheme.colorScheme.error)
+                                .height(chartHeight)
+                                .width(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            // 收入柱
+                            if (income > 0) {
+                                val incomeHeight = if (maxValue > 0) (maxHeight * (income / maxValue)).toFloat().coerceAtLeast(4f) else 4f
+                                Box(
+                                    modifier = Modifier
+                                        .height(incomeHeight.dp)
+                                        .width(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            }
+                            
+                            // 支出柱
+                            if (expense > 0) {
+                                val expenseHeight = if (maxValue > 0) (maxHeight * (expense / maxValue)).toFloat().coerceAtLeast(4f) else 4f
+                                Box(
+                                    modifier = Modifier
+                                        .height(expenseHeight.dp)
+                                        .width(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(MaterialTheme.colorScheme.error)
+                                )
+                            }
+                        }
+                        
+                        // 日期标签
+                        Text(
+                            text = day.toString(),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
-                
-                // 日期标签
-                Text(
-                    text = day.toString(),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
             }
         }
     }

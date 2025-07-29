@@ -576,26 +576,26 @@ fun AddBillDialog(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                ) {
                             rowItems.forEach { item ->
-                                val selected = item == category
-                                Card(
-                                    modifier = Modifier
+                        val selected = item == category
+                        Card(
+                            modifier = Modifier
                                         .weight(1f)
-                                        .clickable { category = item },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                                    ),
-                                    elevation = CardDefaults.cardElevation(0.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
+                                .clickable { category = item },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
                                             .padding(horizontal = 8.dp, vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = item,
-                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = item,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                             fontSize = 14.sp,
                                             maxLines = 1
@@ -619,26 +619,26 @@ fun AddBillDialog(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                ) {
                             rowItems.forEach { item ->
-                                val selected = item == payType
-                                Card(
-                                    modifier = Modifier
+                        val selected = item == payType
+                        Card(
+                            modifier = Modifier
                                         .weight(1f)
-                                        .clickable { payType = item },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                                    ),
-                                    elevation = CardDefaults.cardElevation(0.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
+                                .clickable { payType = item },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
                                             .padding(horizontal = 8.dp, vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = item,
-                                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = item,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                             fontSize = 14.sp,
                                             maxLines = 1
