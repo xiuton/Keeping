@@ -37,6 +37,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.navigation.NavController
+import me.ganto.keeping.core.util.ValidationUtils
+import me.ganto.keeping.core.util.ErrorHandler
+import androidx.compose.ui.platform.LocalContext
+import me.ganto.keeping.core.ui.BillRow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -61,6 +65,8 @@ fun BillHomeScreen(
     var showDayPicker by remember { mutableStateOf(false) }
     val today = Calendar.getInstance()
     var lastSelectedDay by remember { mutableStateOf(today.get(Calendar.DAY_OF_MONTH)) }
+    
+
 
     // 切换月份时自动重置天切换
     LaunchedEffect(currentYearMonth) {
@@ -368,6 +374,7 @@ fun BillHomeScreen(
                 )
             }
         }
+        // 账单列表
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -413,104 +420,6 @@ fun BillHomeScreen(
     }
 }
 
-@Composable
-fun BillRow(
-    bill: BillItem,
-    onDelete: () -> Unit,
-    onEdit: () -> Unit
-) {
-    var showConfirm by remember { mutableStateOf(false) }
-    val categoryColor = when (bill.category) {
-        "收入" -> MaterialTheme.colorScheme.primary
-        "餐饮" -> MaterialTheme.colorScheme.primary
-        "交通" -> MaterialTheme.colorScheme.primary
-        "购物" -> MaterialTheme.colorScheme.primary
-        "娱乐" -> MaterialTheme.colorScheme.primary
-        "医疗" -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.primary
-    }
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onEdit() },
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outline
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 左侧：分类色块+分类名
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(categoryColor, shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    bill.category.take(1),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                // 备注（上，字体大）
-                if (bill.remark.isNotBlank()) {
-                    Text(
-                        bill.remark,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
-                    )
-                    Spacer(Modifier.height(2.dp))
-                }
-                // 分类和方式（下，字体小）
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        bill.category,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        bill.payType,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    (if (bill.amount > 0) "+" else "") + "¥" + String.format("%.2f", bill.amount),
-                                            color = if (bill.amount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Text(
-                    bill.time,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddBillDialog(
@@ -522,6 +431,7 @@ fun AddBillDialog(
     expensePayTypes: List<String>,
     incomePayTypes: List<String>
 ) {
+    val context = LocalContext.current
     val initialType = if ((bill?.amount ?: 0.0) >= 0) "收入" else "支出"
     var type by remember { mutableStateOf(initialType) }
     val categories = if (type == "支出") expenseCategories else incomeCategories
@@ -733,23 +643,37 @@ fun AddBillDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val amt = amount.toDoubleOrNull() ?: 0.0
-                    if (category.isNotBlank() && amt > 0.0) {
-                        val timeStr = timeFormat.format(date)
-                        val dateStr = dateFormat.format(date)
-                        val realAmount = if (type == "支出") -amt else amt
-                        onAdd(
-                            BillItem(
-                                category = category,
-                                amount = realAmount,
-                                remark = remark,
-                                time = "$dateStr $timeStr",
-                                payType = payType,
-                                createTime = bill?.createTime ?: System.currentTimeMillis(),
-                                id = bill?.id ?: java.util.UUID.randomUUID().toString()
-                            )
-                        )
+                    // 使用ValidationUtils进行数据验证
+                    val dateStr = dateFormat.format(date)
+                    val validationResults = ValidationUtils.validateBillItem(
+                        category = category,
+                        amount = amount,
+                        date = dateStr,
+                        remark = remark
+                    )
+                    
+                    val hasError = validationResults.any { !it.isValid }
+                    if (hasError) {
+                        // 显示第一个错误信息
+                        val firstError = validationResults.first { !it.isValid }
+                        ErrorHandler.handleValidationErrorMessage(context, firstError.errorMessage)
+                        return@TextButton
                     }
+                    
+                    val amt = amount.toDoubleOrNull() ?: 0.0
+                    val timeStr = timeFormat.format(date)
+                    val realAmount = if (type == "支出") -amt else amt
+                    onAdd(
+                        BillItem(
+                            category = category,
+                            amount = realAmount,
+                            remark = remark,
+                            time = "$dateStr $timeStr",
+                            payType = payType,
+                            createTime = bill?.createTime ?: System.currentTimeMillis(),
+                            id = bill?.id ?: java.util.UUID.randomUUID().toString()
+                        )
+                    )
                 },
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.height(48.dp)

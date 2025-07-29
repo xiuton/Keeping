@@ -40,6 +40,8 @@ import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import me.ganto.keeping.core.util.ValidationUtils
+import me.ganto.keeping.core.util.ErrorHandler
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -289,21 +291,8 @@ fun AddBillScreen(
             OutlinedTextField(
                 value = amount,
                 onValueChange = { input ->
-                    // 只允许数字和小数点，且只允许一个小数点
-                    val filtered = input.replace(Regex("[^\\d.]"), "")
-                    val parts = filtered.split('.')
-                    val newValue = when {
-                        parts.size <= 2 -> {
-                            // 不能以多个0开头
-                            if (parts[0].startsWith("0") && parts[0].length > 1 && !parts[0].startsWith("0.")) {
-                                parts[0].trimStart('0').ifEmpty { "0" } + if (parts.size == 2) ".${parts[1]}" else ""
-                            } else {
-                                filtered
-                            }
-                        }
-                        else -> parts[0] + "." + parts[1]
-                    }
-                    amount = newValue
+                    // 使用ValidationUtils的格式化函数
+                    amount = ValidationUtils.formatAmountInput(input)
                 },
                 label = { Text("金额") },
                 singleLine = true,
@@ -389,34 +378,51 @@ fun AddBillScreen(
             }
             Button(
                 onClick = {
-                    val amt = amount.toDoubleOrNull() ?: 0.0
-                    if (category.isNotBlank() && amt > 0.0) {
-                        val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
-                        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-                        val realAmount = if (type == "支出") -amt else amt
-                        // 保存tabIndex、分类、方式到DataStore
+                    // 使用ValidationUtils进行数据验证
+                    val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
+                    val validationResults = ValidationUtils.validateBillItem(
+                        category = category,
+                        amount = amount,
+                        date = dateStr,
+                        remark = remark
+                    )
+                    
+                    val hasError = validationResults.any { !it.isValid }
+                    if (hasError) {
+                        // 显示第一个错误信息
+                        val firstError = validationResults.first { !it.isValid }
                         scope.launch {
-                            context.dataStore.edit { prefs ->
-                                prefs[TAB_INDEX_KEY] = tabIndex
-                                if (type == "支出") {
-                                    prefs[EXP_CAT_KEY] = expenseCategory
-                                    prefs[EXP_PAY_KEY] = expensePayType
-                                } else {
-                                    prefs[INC_CAT_KEY] = incomeCategory
-                                    prefs[INC_PAY_KEY] = incomePayType
-                                }
+                            ErrorHandler.handleValidationErrorMessage(context, firstError.errorMessage)
+                        }
+                        return@Button
+                    }
+                    
+                    val amt = amount.toDoubleOrNull() ?: 0.0
+                    val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
+                    val realAmount = if (type == "支出") -amt else amt
+                    
+                    // 保存tabIndex、分类、方式到DataStore
+                    scope.launch {
+                        context.dataStore.edit { prefs ->
+                            prefs[TAB_INDEX_KEY] = tabIndex
+                            if (type == "支出") {
+                                prefs[EXP_CAT_KEY] = expenseCategory
+                                prefs[EXP_PAY_KEY] = expensePayType
+                            } else {
+                                prefs[INC_CAT_KEY] = incomeCategory
+                                prefs[INC_PAY_KEY] = incomePayType
                             }
                         }
-                        onAdd(
-                            BillItem(
-                                category = category,
-                                amount = realAmount,
-                                remark = remark,
-                                time = "$dateStr $timeStr",
-                                payType = payType
-                            )
-                        )
                     }
+                    onAdd(
+                        BillItem(
+                            category = category,
+                            amount = realAmount,
+                            remark = remark,
+                            time = "$dateStr $timeStr",
+                            payType = payType
+                        )
+                    )
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) { Text("保存") }

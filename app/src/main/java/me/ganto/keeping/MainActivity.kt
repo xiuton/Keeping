@@ -34,6 +34,7 @@ import me.ganto.keeping.core.data.dataStore
 import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.core.data.DefaultValues
 import androidx.core.view.WindowCompat
+import me.ganto.keeping.core.util.ErrorHandler
 
 // DataStore扩展
 val BILLS_KEY = stringPreferencesKey("bills_json")
@@ -98,25 +99,43 @@ class MainActivity : ComponentActivity() {
             fun saveBills(newBills: List<BillItem>) {
                 bills = newBills
                 scope.launch(Dispatchers.IO) {
-                    context.dataStore.edit { prefs ->
-                        prefs[BILLS_KEY] = gson.toJson(newBills)
-                    }
+                    ErrorHandler.safeExecute(
+                        context = context,
+                        operation = {
+                            context.dataStore.edit { prefs ->
+                                prefs[BILLS_KEY] = gson.toJson(newBills)
+                            }
+                        },
+                        errorMessage = "保存账单失败，请重试"
+                    )
                 }
             }
             fun saveDarkMode(dark: Boolean) {
                 isDark = dark
                 scope.launch(Dispatchers.IO) {
-                    context.dataStore.edit { prefs ->
-                        prefs[PREF_KEY_DARK] = dark
-                    }
+                    ErrorHandler.safeExecute(
+                        context = context,
+                        operation = {
+                            context.dataStore.edit { prefs ->
+                                prefs[PREF_KEY_DARK] = dark
+                            }
+                        },
+                        errorMessage = "保存主题设置失败"
+                    )
                 }
             }
             fun saveSortBy(sort: String) {
                 sortBy = sort
                 scope.launch(Dispatchers.IO) {
-                    context.dataStore.edit { prefs ->
-                        prefs[PREF_KEY_SORT] = sort
-                    }
+                    ErrorHandler.safeExecute(
+                        context = context,
+                        operation = {
+                            context.dataStore.edit { prefs ->
+                                prefs[PREF_KEY_SORT] = sort
+                            }
+                        },
+                        errorMessage = "保存排序设置失败"
+                    )
                 }
             }
             
