@@ -21,7 +21,9 @@ fun FullScreenLoading(
     message: String = "加载中..."
 ) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -30,12 +32,13 @@ fun FullScreenLoading(
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.size(48.dp),
-                strokeWidth = 4.dp
+                strokeWidth = 4.dp,
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = message,
                 fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -161,15 +164,15 @@ fun SkeletonLoading(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                                         // 左侧圆形骨架
-                     Box(
-                         modifier = Modifier
-                             .size(40.dp)
-                             .background(
-                                 color = MaterialTheme.colorScheme.surfaceVariant,
-                                 shape = CircleShape
-                             )
-                     )
+                    // 左侧圆形骨架
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = CircleShape
+                            )
+                    )
                     
                     Spacer(modifier = Modifier.width(12.dp))
                     
@@ -178,24 +181,24 @@ fun SkeletonLoading(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                                                 Box(
-                             modifier = Modifier
-                                 .fillMaxWidth(0.7f)
-                                 .height(16.dp)
-                                 .background(
-                                     color = MaterialTheme.colorScheme.surfaceVariant,
-                                     shape = RoundedCornerShape(4.dp)
-                                 )
-                         )
-                                                 Box(
-                             modifier = Modifier
-                                 .fillMaxWidth(0.5f)
-                                 .height(14.dp)
-                                 .background(
-                                     color = MaterialTheme.colorScheme.surfaceVariant,
-                                     shape = RoundedCornerShape(4.dp)
-                                 )
-                         )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.7f)
+                                .height(16.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.5f)
+                                .height(14.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                        )
                     }
                 }
             }

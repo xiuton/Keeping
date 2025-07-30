@@ -83,6 +83,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.BorderStroke
+import me.ganto.keeping.core.ui.ContentLoading
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -656,14 +657,10 @@ fun MyScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 if (prefs == null) {
                     // 数据加载前显示loading占位符
-                    Box(
-                        Modifier
-                            .height(48.dp)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    ContentLoading(
+                        message = "加载提醒设置...",
+                        modifier = Modifier.height(48.dp)
+                    )
                 } else {
                     // 数据加载完成后显示真实内容
                     Row(

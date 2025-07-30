@@ -54,6 +54,8 @@ import me.ganto.keeping.core.data.DefaultValues
 import android.net.Uri
 import java.io.InputStream
 import androidx.compose.foundation.BorderStroke
+import me.ganto.keeping.core.ui.ContentLoading
+import me.ganto.keeping.core.ui.SkeletonLoading
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -126,6 +128,7 @@ fun SettingsScreen(
     var showBackupPathDialog by remember { mutableStateOf(false) }
     var showImporting by remember { mutableStateOf(false) }
     var importError by remember { mutableStateOf<String?>(null) }
+    var isLoadingBackupFiles by remember { mutableStateOf(true) }
     
     // 权限请求
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -171,6 +174,9 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         backupManager.getBackupFiles().onSuccess { files ->
             backupFiles = files
+            isLoadingBackupFiles = false
+        }.onFailure {
+            isLoadingBackupFiles = false
         }
     }
     
@@ -694,7 +700,14 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // 备份文件列表
-                if (backupFiles.isNotEmpty()) {
+                if (isLoadingBackupFiles) {
+                    // 加载时显示骨架屏
+                    Text("备份文件列表", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SkeletonLoading(
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else if (backupFiles.isNotEmpty()) {
                     Text("备份文件列表", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -957,14 +970,10 @@ fun SettingsScreen(
             contentAlignment = Alignment.Center
         ) {
             Card {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("处理中...")
-                }
+                ContentLoading(
+                    message = "正在处理数据...",
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }

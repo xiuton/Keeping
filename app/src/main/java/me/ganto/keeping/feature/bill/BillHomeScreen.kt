@@ -41,6 +41,8 @@ import me.ganto.keeping.core.util.ValidationUtils
 import me.ganto.keeping.core.util.ErrorHandler
 import androidx.compose.ui.platform.LocalContext
 import me.ganto.keeping.core.ui.BillRow
+import me.ganto.keeping.core.ui.ErrorState
+import me.ganto.keeping.core.ui.EmptyState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -378,13 +380,24 @@ fun BillHomeScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            filteredBills.forEach { bill ->
-                BillRow(
-                    bill = bill,
-                    onDelete = { onDelete(bill) },
-                    // 现在点击进入预览弹窗
-                    onEdit = { previewBill = bill }
+            if (filteredBills.isEmpty()) {
+                // 当筛选后的账单为空时显示空状态
+                EmptyState(
+                    title = if (filterDate != null) "当日暂无账单" else "本月暂无账单",
+                    message = if (filterDate != null) "在 $filterDate 这一天还没有任何账单记录" else "在 ${currentYearMonth.first}年${currentYearMonth.second}月还没有任何账单记录",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp)
                 )
+            } else {
+                filteredBills.forEach { bill ->
+                    BillRow(
+                        bill = bill,
+                        onDelete = { onDelete(bill) },
+                        // 现在点击进入预览弹窗
+                        onEdit = { previewBill = bill }
+                    )
+                }
             }
         }
     }
@@ -701,66 +714,7 @@ fun AddBillDialog(
     }
 }
 
-@Composable
-fun SuperDropdownField(
-    value: String,
-    label: String,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    items: List<String>,
-    onItemSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val borderColor = MaterialTheme.colorScheme.outline
-    val shape = MaterialTheme.shapes.medium
-    val labelStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
-    val textStyle = MaterialTheme.typography.bodyLarge.copy(lineHeight = 20.sp)
-
-    Box(modifier = modifier) {
-        Column {
-            Text(
-                text = label,
-                style = labelStyle,
-                modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .border(1.dp, borderColor, shape)
-                    .clip(shape)
-                    .clickable { onExpandedChange(!expanded) }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = value,
-                    style = textStyle,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Filled.ArrowDropDown,
-                    contentDescription = "展开",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) }
-        ) {
-            items.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    onClick = {
-                        onItemSelected(item)
-                        onExpandedChange(false)
-                    }
-                )
-            }
-        }
-    }
-} 
+ 
 
 @Composable
 fun BillPreviewDialog(
