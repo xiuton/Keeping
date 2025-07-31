@@ -76,4 +76,5 @@ dependencies {
     implementation("com.github.yalantis:ucrop:2.2.8")
     implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

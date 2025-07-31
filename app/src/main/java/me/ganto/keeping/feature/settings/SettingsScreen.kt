@@ -326,7 +326,6 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("管理类型", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -349,38 +348,38 @@ fun SettingsScreen(
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-        Text("分类管理", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Text("分类管理", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-        Row(
-    modifier = Modifier.fillMaxWidth(),
-    verticalAlignment = Alignment.CenterVertically,
-    horizontalArrangement = Arrangement.spacedBy(8.dp)
-) {
-    OutlinedTextField(
-        value = newCategory,
-        onValueChange = { newCategory = it },
-        label = { Text("添加分类") },
-        singleLine = true,
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.weight(1f),
-        textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
-    )
-    Button(
-        onClick = {
-            val trimmed = newCategory.trim()
-            if (trimmed.isNotEmpty() && !currentCategories.contains(trimmed)) {
-                scope.launch {
-                    saveCategories(currentCategories + trimmed)
-                    newCategory = ""
+                Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = newCategory,
+                    onValueChange = { newCategory = it },
+                    label = { Text("添加分类") },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.weight(1f),
+                    textStyle = LocalTextStyle.current.copy(fontSize = 15.sp)
+                )
+                Button(
+                    onClick = {
+                        val trimmed = newCategory.trim()
+                        if (trimmed.isNotEmpty() && !currentCategories.contains(trimmed)) {
+                            scope.launch {
+                                saveCategories(currentCategories + trimmed)
+                                newCategory = ""
+                            }
+                        }
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.height(56.dp)
+                ) {
+                    Text("添加")
                 }
             }
-        },
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.height(56.dp)
-    ) {
-        Text("添加")
-    }
-}
                 Spacer(modifier = Modifier.height(8.dp))
                 val chunkedCategories = currentCategories.chunked(4)
                 chunkedCategories.forEach { rowItems ->

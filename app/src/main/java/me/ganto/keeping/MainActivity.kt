@@ -35,10 +35,11 @@ import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.core.data.DefaultValues
 import androidx.core.view.WindowCompat
 import me.ganto.keeping.core.util.ErrorHandler
-import me.ganto.keeping.core.ui.FullScreenLoading
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlinx.coroutines.delay
 
 // DataStore扩展
 val BILLS_KEY = stringPreferencesKey("bills_json")
@@ -50,6 +51,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // 允许内容延伸到系统栏下方
+        
+        // 安装启动画面
+        val splashScreen = installSplashScreen()
         
         // 检查是否从通知点击进入，需要跳转到新增账单界面
         val shouldOpenAddBill = intent.getBooleanExtra("open_add_bill", false)
@@ -64,10 +68,19 @@ class MainActivity : ComponentActivity() {
             val systemDarkTheme = isSystemInDarkTheme()
             var currentDarkTheme by remember { mutableStateOf(systemDarkTheme) }
             
+            // 保持启动画面直到数据加载完成
+            var keepSplashScreen by remember { mutableStateOf(true) }
+            
+            LaunchedEffect(Unit) {
+                // 延迟一小段时间确保界面完全加载
+                kotlinx.coroutines.delay(100)
+                keepSplashScreen = false
+            }
+            
+            // 控制启动画面
+            splashScreen.setKeepOnScreenCondition { keepSplashScreen }
+            
             KeepingTheme(darkTheme = currentDarkTheme) {
-                // 立即显示加载界面，避免空白
-                FullScreenLoading(message = "正在加载应用数据...")
-                
                 // 这里直接调用 NavGraph，传递所需参数
                 val context = LocalContext.current
                 var bills by remember { mutableStateOf<List<BillItem>>(emptyList()) }
@@ -175,28 +188,27 @@ class MainActivity : ComponentActivity() {
                         "sort_by" to sortBy
                     )
                 }
-                // 当数据加载完成后，显示主界面
-                if (isLoaded && isDarkLoaded && sortLoaded && catPayLoaded) {
-                    NavGraph(
-                        bills = bills,
-                        saveBills = ::saveBills,
-                        isDark = isDark,
-                        saveDarkMode = ::saveDarkMode,
-                        sortBy = sortBy,
-                        saveSortBy = ::saveSortBy,
-                        expenseCategories = expenseCategories,
-                        incomeCategories = incomeCategories,
-                        expensePayTypes = expensePayTypes,
-                        incomePayTypes = incomePayTypes,
-                        navIndex = navIndex,
-                        setNavIndex = { navIndex = it },
-                        showAddDialog = showAddDialog,
-                        setShowAddDialog = { showAddDialog = it },
-                        backupManager = backupManager,
-                        collectSettingsData = ::collectSettingsData,
-                        shouldOpenAddBill = shouldOpenAddBill
-                    )
-                }
+                
+                // 直接显示主界面，不等待数据加载
+                NavGraph(
+                    bills = bills,
+                    saveBills = ::saveBills,
+                    isDark = isDark,
+                    saveDarkMode = ::saveDarkMode,
+                    sortBy = sortBy,
+                    saveSortBy = ::saveSortBy,
+                    expenseCategories = expenseCategories,
+                    incomeCategories = incomeCategories,
+                    expensePayTypes = expensePayTypes,
+                    incomePayTypes = incomePayTypes,
+                    navIndex = navIndex,
+                    setNavIndex = { navIndex = it },
+                    showAddDialog = showAddDialog,
+                    setShowAddDialog = { showAddDialog = it },
+                    backupManager = backupManager,
+                    collectSettingsData = ::collectSettingsData,
+                    shouldOpenAddBill = shouldOpenAddBill
+                )
             }
         }
     }

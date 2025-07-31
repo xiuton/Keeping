@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package me.ganto.keeping.navigation
 
+import android.os.Build
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,7 @@ import me.ganto.keeping.core.data.BackupManager
 import me.ganto.keeping.feature.feedback.FeedbackScreen
 import me.ganto.keeping.feature.test.TestScreen
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
 import kotlinx.coroutines.launch
@@ -41,6 +43,7 @@ const val ROUTE_ADD_BILL = "addBill"
 const val ROUTE_FEEDBACK = "feedback"
 const val ROUTE_TEST = "test"
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavGraph(
     bills: List<BillItem>,
@@ -248,11 +251,71 @@ fun NavGraph(
                         },
                         bottomBar = {
                             NavigationBar {
-                                NavigationBarItem(selected = navIndex == 0, onClick = { setNavIndex(0) }, icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "账单") }, label = { Text("账单") })
-                                NavigationBarItem(selected = navIndex == 1, onClick = { setNavIndex(1) }, icon = { Icon(Icons.Filled.BarChart, contentDescription = "统计") }, label = { Text("统计") })
-                                NavigationBarItem(selected = false, onClick = { navController.navigate(ROUTE_ADD_BILL) }, icon = { Icon(Icons.Filled.Add, contentDescription = "新增账单") }, label = { Text("新增") })
-                                NavigationBarItem(selected = navIndex == 2, onClick = { setNavIndex(2) }, icon = { Icon(Icons.Filled.Settings, contentDescription = "设置") }, label = { Text("设置") })
-                                NavigationBarItem(selected = navIndex == 3, onClick = { setNavIndex(3) }, icon = { Icon(Icons.Filled.Person, contentDescription = "我的") }, label = { Text("我的") })
+                                NavigationBarItem(
+                                    selected = navIndex == 0, 
+                                    onClick = { setNavIndex(0) }, 
+                                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "账单") }, 
+                                    label = { Text("账单") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        indicatorColor = MaterialTheme.colorScheme.surface
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = navIndex == 1, 
+                                    onClick = { setNavIndex(1) }, 
+                                    icon = { Icon(Icons.Filled.BarChart, contentDescription = "统计") }, 
+                                    label = { Text("统计") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        indicatorColor = MaterialTheme.colorScheme.surface
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = false, 
+                                    onClick = { navController.navigate(ROUTE_ADD_BILL) }, 
+                                    icon = { Icon(Icons.Filled.Add, contentDescription = "新增账单") }, 
+                                    label = { Text("新增") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        indicatorColor = MaterialTheme.colorScheme.surface
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = navIndex == 2, 
+                                    onClick = { setNavIndex(2) }, 
+                                    icon = { Icon(Icons.Filled.Settings, contentDescription = "设置") }, 
+                                    label = { Text("设置") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        indicatorColor = MaterialTheme.colorScheme.surface
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = navIndex == 3, 
+                                    onClick = { setNavIndex(3) }, 
+                                    icon = { Icon(Icons.Filled.Person, contentDescription = "我的") }, 
+                                    label = { Text("我的") },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        indicatorColor = MaterialTheme.colorScheme.surface
+                                    )
+                                )
                             }
                         }
                     ) { innerPadding ->
