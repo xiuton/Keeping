@@ -17,4 +17,5 @@ val PREF_KEY_EXP_CAT = stringPreferencesKey("expense_categories")
 val PREF_KEY_INC_CAT = stringPreferencesKey("income_categories")
 val PREF_KEY_EXP_PAY = stringPreferencesKey("expense_pay_types")
 val PREF_KEY_INC_PAY = stringPreferencesKey("income_pay_types")
+val PREF_KEY_THEME_MODE = stringPreferencesKey("theme_mode") // auto, light, dark
 // 可根据需要添加更多 key 

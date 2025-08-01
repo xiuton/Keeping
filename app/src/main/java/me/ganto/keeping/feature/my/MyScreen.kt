@@ -72,6 +72,9 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoMode
+import androidx.compose.material.icons.filled.LightMode
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
@@ -88,8 +91,8 @@ import me.ganto.keeping.core.ui.ContentLoading
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyScreen(
-    isDark: Boolean,
-    onDarkChange: (Boolean) -> Unit,
+    themeMode: String,
+    onThemeModeChange: (String) -> Unit,
     navController: NavController,
     innerPadding: PaddingValues
 ) {
@@ -490,14 +493,92 @@ fun MyScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Filled.DarkMode,
-                            contentDescription = "深色模式",
+                            contentDescription = "主题模式",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(12.dp))
-                        Text("深色模式", fontSize = 16.sp)
+                        Text("主题模式", fontSize = 16.sp)
                     }
-                    Switch(checked = isDark, onCheckedChange = onDarkChange)
+                    // 主题模式选择
+                    var expanded by remember { mutableStateOf(false) }
+                    val themeOptions = listOf("跟随系统", "浅色模式", "深色模式")
+                    val themeValues = listOf("auto", "light", "dark")
+                    val currentThemeIndex = themeValues.indexOf(themeMode)
+                    val currentThemeText = if (currentThemeIndex >= 0) themeOptions[currentThemeIndex] else "跟随系统"
+                    
+                    Box {
+                        TextButton(
+                            onClick = { expanded = true },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = currentThemeText,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = "展开",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            themeOptions.forEachIndexed { index, option ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = when (index) {
+                                                    0 -> Icons.Filled.AutoMode
+                                                    1 -> Icons.Filled.LightMode
+                                                    else -> Icons.Filled.DarkMode
+                                                },
+                                                contentDescription = null,
+                                                tint = if (index == currentThemeIndex) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                },
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Text(
+                                                text = option,
+                                                color = if (index == currentThemeIndex) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface
+                                                }
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        onThemeModeChange(themeValues[index])
+                                        expanded = false
+                                    },
+                                    modifier = Modifier
+                                        .height(40.dp)
+                                        .background(
+                                            if (index == currentThemeIndex) {
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                            } else {
+                                                MaterialTheme.colorScheme.surface
+                                            }
+                                        )
+                                )
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
                 Row(
@@ -546,7 +627,7 @@ fun MyScreen(
                 }
             }
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         // 记账提醒独立板块
         val REMINDER_ENABLED_KEY = stringPreferencesKey("reminder_enabled")
         val REMINDER_TIME_KEY = stringPreferencesKey("reminder_time")
@@ -798,7 +879,7 @@ fun MyScreen(
                 }
             }
                 }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         // 关于与帮助
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -844,7 +925,7 @@ fun MyScreen(
             }
         }
         if (testEntryVisible) {
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
             // 测试页面入口板块
             Card(
                 elevation = CardDefaults.cardElevation(0.dp)

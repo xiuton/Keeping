@@ -34,10 +34,11 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TestScreen(onBack: () -> Unit) {
+fun TestScreen(onBack: () -> Unit, navController: NavController? = null) {
     var counter by remember { mutableStateOf(0) }
     var text by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
@@ -248,6 +249,7 @@ fun TestScreen(onBack: () -> Unit) {
                     Text("Snackbar演示")
                 }
             }
+
         }
     }
 } 

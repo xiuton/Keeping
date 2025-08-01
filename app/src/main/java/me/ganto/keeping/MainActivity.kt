@@ -1,10 +1,12 @@
 @file:OptIn(ExperimentalLayoutApi::class)
 package me.ganto.keeping
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material3.*
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import me.ganto.keeping.theme.KeepingTheme
 import me.ganto.keeping.navigation.NavGraph
 import me.ganto.keeping.core.model.BillItem
@@ -39,21 +42,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
+
 import kotlinx.coroutines.delay
 
 // DataStore扩展
 val BILLS_KEY = stringPreferencesKey("bills_json")
 val gson = Gson()
-val PREF_KEY_DARK = booleanPreferencesKey("is_dark")
+val PREF_KEY_DARK = booleanPreferencesKey("is_dark") // 保留兼容性
+val PREF_KEY_THEME_MODE = stringPreferencesKey("theme_mode") // auto, light, dark
 val PREF_KEY_SORT = stringPreferencesKey("sort_by")
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        
         super.onCreate(savedInstanceState)
+        
         enableEdgeToEdge() // 允许内容延伸到系统栏下方
         
         // 安装启动画面
-        val splashScreen = installSplashScreen()
+        val splashScreen = installSplashScreen()        
+
         
         // 检查是否从通知点击进入，需要跳转到新增账单界面
         val shouldOpenAddBill = intent.getBooleanExtra("open_add_bill", false)
@@ -88,8 +99,8 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 var navIndex by rememberSaveable { mutableStateOf(0) }
                 var showAddDialog by remember { mutableStateOf(false) }
-                var isDark by remember { mutableStateOf(false) }
-                var isDarkLoaded by remember { mutableStateOf(false) }
+                var themeMode by remember { mutableStateOf("auto") } // auto, light, dark
+                var themeModeLoaded by remember { mutableStateOf(false) }
                 var sortBy by remember { mutableStateOf("create") }
                 var sortLoaded by remember { mutableStateOf(false) }
                 val backupManager = remember { BackupManager(context) }
@@ -118,9 +129,9 @@ class MainActivity : ComponentActivity() {
                     isLoaded = true
                 }
                 LaunchedEffect(Unit) {
-                    val dark = context.dataStore.data.map { it[PREF_KEY_DARK] ?: false }.first()
-                    isDark = dark
-                    isDarkLoaded = true
+                    val mode = context.dataStore.data.map { it[PREF_KEY_THEME_MODE] ?: "auto" }.first()
+                    themeMode = mode
+                    themeModeLoaded = true
                 }
                 LaunchedEffect(Unit) {
                     val sort = context.dataStore.data.map { it[PREF_KEY_SORT] ?: "create" }.first()
@@ -128,10 +139,14 @@ class MainActivity : ComponentActivity() {
                     sortLoaded = true
                 }
                 
-                // 当深色模式设置加载完成后，更新主题
-                LaunchedEffect(isDarkLoaded, isDark) {
-                    if (isDarkLoaded) {
-                        currentDarkTheme = isDark
+                // 当主题模式设置加载完成后，更新主题
+                LaunchedEffect(themeModeLoaded, themeMode) {
+                    if (themeModeLoaded) {
+                        currentDarkTheme = when (themeMode) {
+                            "light" -> false
+                            "dark" -> true
+                            else -> systemDarkTheme // auto 模式，使用之前获取的系统主题
+                        }
                     }
                 }
                 fun saveBills(newBills: List<BillItem>) {
@@ -148,17 +163,17 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-                fun saveDarkMode(dark: Boolean) {
-                    isDark = dark
+                fun saveThemeMode(mode: String) {
+                    themeMode = mode
                     scope.launch(Dispatchers.IO) {
                         ErrorHandler.safeExecute(
                             context = context,
                             operation = {
                                 context.dataStore.edit { prefs ->
-                                    prefs[PREF_KEY_DARK] = dark
+                                    prefs[PREF_KEY_THEME_MODE] = mode
                                 }
                             },
-                            errorMessage = "保存主题设置失败"
+                            errorMessage = "保存主题模式设置失败，请重试"
                         )
                     }
                 }
@@ -184,7 +199,7 @@ class MainActivity : ComponentActivity() {
                         "income_categories" to gson.toJson(incomeCategories),
                         "expense_pay_types" to gson.toJson(expensePayTypes),
                         "income_pay_types" to gson.toJson(incomePayTypes),
-                        "is_dark" to isDark.toString(),
+                        "theme_mode" to themeMode,
                         "sort_by" to sortBy
                     )
                 }
@@ -193,8 +208,8 @@ class MainActivity : ComponentActivity() {
                 NavGraph(
                     bills = bills,
                     saveBills = ::saveBills,
-                    isDark = isDark,
-                    saveDarkMode = ::saveDarkMode,
+                    themeMode = themeMode,
+                    saveThemeMode = ::saveThemeMode,
                     sortBy = sortBy,
                     saveSortBy = ::saveSortBy,
                     expenseCategories = expenseCategories,

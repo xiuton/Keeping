@@ -35,6 +35,7 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.foundation.isSystemInDarkTheme
 import kotlinx.coroutines.launch
 import me.ganto.keeping.feature.bill.AllBillsScreen
 
@@ -48,8 +49,8 @@ const val ROUTE_TEST = "test"
 fun NavGraph(
     bills: List<BillItem>,
     saveBills: (List<BillItem>) -> Unit,
-    isDark: Boolean,
-    saveDarkMode: (Boolean) -> Unit,
+    themeMode: String,
+    saveThemeMode: (String) -> Unit,
     sortBy: String,
     saveSortBy: (String) -> Unit,
     expenseCategories: List<String>,
@@ -78,7 +79,14 @@ fun NavGraph(
             navController.navigate(ROUTE_ADD_BILL)
         }
     }
-    KeepingTheme(darkTheme = isDark) {
+    // 根据主题模式确定是否使用深色主题
+    val isDarkTheme = when (themeMode) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme() // auto 模式
+    }
+    
+    KeepingTheme(darkTheme = isDarkTheme) {
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
         var lastBackPress by remember { mutableStateOf(0L) }
@@ -349,14 +357,14 @@ fun NavGraph(
                                     )
                                 }
                                 2 -> SettingsScreen(
-                                    isDark = isDark, 
-                                    onDarkChange = { saveDarkMode(it) },
+                                    themeMode = themeMode,
+                                    onThemeModeChange = { saveThemeMode(it) },
                                     backupManager = backupManager,
                                     collectSettingsData = collectSettingsData,
                                     bills = bills,
                                     saveBills = saveBills
                                 )
-                                3 -> MyScreen(isDark = isDark, onDarkChange = { saveDarkMode(it) }, navController = navController, innerPadding = innerPadding)
+                                3 -> MyScreen(themeMode = themeMode, onThemeModeChange = { saveThemeMode(it) }, navController = navController, innerPadding = innerPadding)
                             }
                             if (showAddDialog) {
                                 // 保留原有弹窗编辑功能
@@ -394,8 +402,9 @@ fun NavGraph(
                     FeedbackScreen(onBack = { navController.popBackStack() })
                 }
                 composable(ROUTE_TEST) {
-                    TestScreen(onBack = { navController.popBackStack() })
+                    TestScreen(onBack = { navController.popBackStack() }, navController = navController)
                 }
+
                 composable("all_bills") {
                     AllBillsScreen(
                         allBills = bills,

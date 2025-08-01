@@ -16,7 +16,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Keeping">
+        android:theme="@style/Theme.Keeping.Image">
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="me.ganto.keeping.fileprovider"
@@ -32,8 +32,7 @@
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Keeping">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
