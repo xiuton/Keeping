@@ -321,31 +321,6 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 开屏模式设置
-        Card(
-            elevation = CardDefaults.cardElevation(0.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("开屏界面", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // 开屏模式信息
-                Text(
-                    text = "当前模式：图片模式",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-                
-                Text(
-                    text = "使用固定的全屏启动图",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-        }
-        
         Card(
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
