@@ -22,6 +22,7 @@ import me.ganto.keeping.theme.KeepingTheme
 import me.ganto.keeping.core.model.BillItem
 import me.ganto.keeping.feature.bill.StatisticsScreen
 import me.ganto.keeping.feature.bill.BillHomeScreen
+import me.ganto.keeping.feature.config.ConfigScreen
 import me.ganto.keeping.feature.settings.SettingsScreen
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ const val ROUTE_MAIN = "main"
 const val ROUTE_ADD_BILL = "addBill"
 const val ROUTE_FEEDBACK = "feedback"
 const val ROUTE_TEST = "test"
+const val ROUTE_SETTINGS = "settings"
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -210,7 +212,7 @@ fun NavGraph(
                                             }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
                                         }
                                         1 -> Text("统计", fontWeight = FontWeight.Bold)
-                                        2 -> Text("设置", fontWeight = FontWeight.Bold)
+                                        2 -> Text("配置", fontWeight = FontWeight.Bold)
                                     }
                                 },
                                 actions = {
@@ -301,8 +303,8 @@ fun NavGraph(
                                 NavigationBarItem(
                                     selected = navIndex == 2, 
                                     onClick = { setNavIndex(2) }, 
-                                    icon = { Icon(Icons.Filled.Settings, contentDescription = "设置") }, 
-                                    label = { Text("设置") },
+                                                            icon = { Icon(Icons.Filled.Settings, contentDescription = "配置") },
+                        label = { Text("配置") },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,
                                         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -356,7 +358,7 @@ fun NavGraph(
                                         onYearMonthChange = onYearMonthChange
                                     )
                                 }
-                                2 -> SettingsScreen(
+                                2 -> ConfigScreen(
                                     themeMode = themeMode,
                                     onThemeModeChange = { saveThemeMode(it) }
                                 )
@@ -408,6 +410,14 @@ fun NavGraph(
                 }
                 composable(ROUTE_TEST) {
                     TestScreen(onBack = { navController.popBackStack() }, navController = navController)
+                }
+
+                composable(ROUTE_SETTINGS) {
+                    SettingsScreen(
+                        navController = navController,
+                        themeMode = themeMode,
+                        onThemeModeChange = { saveThemeMode(it) }
+                    )
                 }
 
                 composable("all_bills") {

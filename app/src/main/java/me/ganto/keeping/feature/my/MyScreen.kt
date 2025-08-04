@@ -70,6 +70,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -615,6 +616,30 @@ fun MyScreen(
             val density = LocalDensity.current
             val statusBarHeightPx = WindowInsets.statusBars.getTop(density)
             val statusBarHeightDp = with(density) { statusBarHeightPx.toDp() }
+            
+            // 左上角设置图标按钮
+            IconButton(
+                onClick = { navController.navigate("settings") },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = statusBarHeightDp, start = 16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "设置",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+            
+            // 右上角背景图编辑按钮
             IconButton(
                 onClick = { bgLauncher.launch("image/*") },
                 modifier = Modifier
