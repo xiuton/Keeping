@@ -13,6 +13,13 @@ object MoneyUtils {
     }
     
     /**
+     * 安全的字符串转Double，避免空指针异常
+     */
+    fun safeParseDouble(value: String): Double {
+        return value.toDoubleOrNull() ?: 0.0
+    }
+    
+    /**
      * 安全的货币加法，避免浮点数精度问题
      */
     fun addMoney(amount1: Double, amount2: Double): Double {

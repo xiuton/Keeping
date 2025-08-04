@@ -358,13 +358,18 @@ fun NavGraph(
                                 }
                                 2 -> SettingsScreen(
                                     themeMode = themeMode,
-                                    onThemeModeChange = { saveThemeMode(it) },
-                                    backupManager = backupManager,
-                                    collectSettingsData = collectSettingsData,
-                                    bills = bills,
-                                    saveBills = saveBills
+                                    onThemeModeChange = { saveThemeMode(it) }
                                 )
-                                3 -> MyScreen(themeMode = themeMode, onThemeModeChange = { saveThemeMode(it) }, navController = navController, innerPadding = innerPadding)
+                                3 -> MyScreen(
+                    themeMode = themeMode, 
+                    onThemeModeChange = { saveThemeMode(it) }, 
+                    navController = navController, 
+                    innerPadding = innerPadding,
+                    backupManager = backupManager,
+                    collectSettingsData = collectSettingsData,
+                    bills = bills,
+                    saveBills = saveBills
+                )
                             }
                             if (showAddDialog) {
                                 // 保留原有弹窗编辑功能

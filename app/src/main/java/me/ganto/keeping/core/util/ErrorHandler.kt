@@ -20,6 +20,13 @@ object ErrorHandler {
     }
     
     /**
+     * 显示Toast消息的统一方法
+     */
+    fun showToast(context: Context, message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(context, message, duration).show()
+    }
+    
+    /**
      * 安全执行函数，捕获异常并显示错误信息
      */
     suspend fun <T> safeExecute(
@@ -35,7 +42,7 @@ object ErrorHandler {
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                showToast(context, errorMessage)
             }
             Result.failure(e)
         }
@@ -51,7 +58,7 @@ object ErrorHandler {
             error.message?.contains("500") == true -> "服务器错误，请稍后重试"
             else -> "网络连接失败，请检查网络设置"
         }
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        showToast(context, message, Toast.LENGTH_LONG)
     }
     
     /**
@@ -64,14 +71,14 @@ object ErrorHandler {
             "date" -> "请选择有效日期"
             else -> "请检查输入信息"
         }
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        showToast(context, message)
     }
     
     /**
      * 数据验证错误处理（带自定义消息）
      */
     fun handleValidationErrorMessage(context: Context, errorMessage: String) {
-        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+        showToast(context, errorMessage)
     }
     
     /**
@@ -84,6 +91,6 @@ object ErrorHandler {
             error.message?.contains("disk full") == true -> "存储空间不足"
             else -> "文件操作失败，请重试"
         }
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        showToast(context, message, Toast.LENGTH_LONG)
     }
 } 

@@ -36,9 +36,11 @@ object ValidationUtils {
      */
     fun validateDate(dateString: String): ValidationResult {
         return try {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            dateFormat.isLenient = false
-            val date = dateFormat.parse(dateString)
+            val date = DateUtils.parseDate(dateString)
+            if (date == null) {
+                return ValidationResult(false, "日期格式无效")
+            }
+            
             val calendar = Calendar.getInstance()
             calendar.time = date
             
@@ -83,13 +85,6 @@ object ValidationUtils {
         results.add(validateRemark(remark))
         
         return results
-    }
-    
-    /**
-     * 格式化金额显示
-     */
-    fun formatAmount(amount: Double): String {
-        return String.format("%.2f", amount)
     }
     
     /**

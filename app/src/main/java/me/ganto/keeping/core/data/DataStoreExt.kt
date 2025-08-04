@@ -2,7 +2,11 @@ package me.ganto.keeping.core.data
 
 import android.content.Context
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+
+// DataStore实例
+val Context.dataStore by preferencesDataStore(name = "bills")
 
 // 默认值常量 - 统一管理所有默认配置
 object DefaultValues {
@@ -12,10 +16,12 @@ object DefaultValues {
     val INCOME_PAY_TYPES = listOf("银行卡", "支付宝", "微信", "其他")
 }
 
-val Context.dataStore by preferencesDataStore(name = "bills")
+// DataStore键定义
+val BILLS_KEY = stringPreferencesKey("bills_json")
 val PREF_KEY_EXP_CAT = stringPreferencesKey("expense_categories")
 val PREF_KEY_INC_CAT = stringPreferencesKey("income_categories")
 val PREF_KEY_EXP_PAY = stringPreferencesKey("expense_pay_types")
 val PREF_KEY_INC_PAY = stringPreferencesKey("income_pay_types")
 val PREF_KEY_THEME_MODE = stringPreferencesKey("theme_mode") // auto, light, dark
+val PREF_KEY_SORT = stringPreferencesKey("sort_by")
 // 可根据需要添加更多 key 

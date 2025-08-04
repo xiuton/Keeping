@@ -42,6 +42,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import me.ganto.keeping.core.util.ValidationUtils
 import me.ganto.keeping.core.util.ErrorHandler
+import me.ganto.keeping.core.util.MoneyUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -397,7 +398,7 @@ fun AddBillScreen(
                         return@Button
                     }
                     
-                    val amt = amount.toDoubleOrNull() ?: 0.0
+                    val amt = MoneyUtils.safeParseDouble(amount)
                     val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
                     val realAmount = if (type == "支出") -amt else amt
                     

@@ -673,7 +673,7 @@ fun AddBillDialog(
                         return@TextButton
                     }
                     
-                    val amt = amount.toDoubleOrNull() ?: 0.0
+                                            val amt = MoneyUtils.safeParseDouble(amount)
                     val timeStr = timeFormat.format(date)
                     val realAmount = if (type == "支出") -amt else amt
                     onAdd(

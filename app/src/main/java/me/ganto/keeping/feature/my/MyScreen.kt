@@ -87,6 +87,34 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.BorderStroke
 import me.ganto.keeping.core.ui.ContentLoading
+// 备份相关导入
+import me.ganto.keeping.core.data.BackupManager
+import me.ganto.keeping.core.data.BackupFileInfo
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.text.style.TextOverflow
+import java.text.SimpleDateFormat
+import java.util.*
+import androidx.core.content.ContextCompat
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.foundation.layout.FlowRow
+import me.ganto.keeping.core.data.DefaultValues
+import me.ganto.keeping.core.ui.SkeletonLoading
+import me.ganto.keeping.core.data.PREF_KEY_EXP_CAT
+import me.ganto.keeping.core.data.PREF_KEY_INC_CAT
+import me.ganto.keeping.core.data.PREF_KEY_EXP_PAY
+import me.ganto.keeping.core.data.PREF_KEY_INC_PAY
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import androidx.datastore.preferences.core.emptyPreferences
+import me.ganto.keeping.core.model.BillItem
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -94,7 +122,11 @@ fun MyScreen(
     themeMode: String,
     onThemeModeChange: (String) -> Unit,
     navController: NavController,
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    backupManager: BackupManager? = null,
+    collectSettingsData: (() -> Map<String, String>)? = null,
+    bills: List<BillItem> = emptyList(),
+    saveBills: ((List<BillItem>) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -106,6 +138,181 @@ fun MyScreen(
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     } catch (e: Exception) {
         "1.0.0"
+    }
+
+    // 备份相关状态
+    var backupFiles by remember { mutableStateOf<List<BackupFileInfo>>(emptyList()) }
+    var showBackupDialog by remember { mutableStateOf(false) }
+    var showRestoreDialog by remember { mutableStateOf<BackupFileInfo?>(null) }
+    var showDeleteBackupDialog by remember { mutableStateOf<BackupFileInfo?>(null) }
+    var backupDescription by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var showMessage by remember { mutableStateOf("") }
+    var showBackupPathDialog by remember { mutableStateOf(false) }
+    var showImporting by remember { mutableStateOf(false) }
+    var importError by remember { mutableStateOf<String?>(null) }
+    var isLoadingBackupFiles by remember { mutableStateOf(true) }
+    val gson = remember { Gson() }
+
+    // 权限请求
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            showMessage = "权限已授予"
+        } else {
+            showMessage = "需要存储权限才能创建外部备份"
+        }
+    }
+
+    // 加载备份文件列表
+    LaunchedEffect(Unit) {
+        backupManager?.let { manager ->
+            manager.getBackupFiles().onSuccess { files ->
+                backupFiles = files
+                isLoadingBackupFiles = false
+            }.onFailure {
+                isLoadingBackupFiles = false
+            }
+        }
+    }
+
+    // 备份相关函数
+    fun createBackup() {
+        if (backupManager == null || collectSettingsData == null || saveBills == null) return
+        
+        // 检查权限
+        val hasWritePermission = ContextCompat.checkSelfPermission(
+            context, 
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        val hasReadPermission = ContextCompat.checkSelfPermission(
+            context, 
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (!hasWritePermission || !hasReadPermission) {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                )
+            )
+            return
+        }
+        
+        scope.launch {
+            isLoading = true
+            try {
+                val settings = collectSettingsData()
+                val result = backupManager.createBackup(bills, settings, backupDescription)
+                result.onSuccess { fileName ->
+                    showMessage = "备份创建成功: $fileName"
+                    backupDescription = ""
+                    showBackupDialog = false
+                    // 刷新备份文件列表
+                    backupManager.getBackupFiles().onSuccess { files ->
+                        backupFiles = files
+                    }
+                }.onFailure { error ->
+                    showMessage = "备份创建失败: ${error.message}"
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+    
+    fun restoreBackup(backupFile: BackupFileInfo) {
+        if (saveBills == null) return
+        
+        scope.launch {
+            isLoading = true
+            try {
+                val result = backupManager?.restoreData(backupFile.fileName)
+                result?.onSuccess { (restoredBills, restoredSettings) ->
+                    // 恢复账单数据
+                    saveBills(restoredBills)
+                    
+                    // 恢复设置数据
+                    scope.launch {
+                        context.dataStore.edit { prefs ->
+                            restoredSettings.forEach { (key, value) ->
+                                when (key) {
+                                    "expense_categories" -> prefs[PREF_KEY_EXP_CAT] = value
+                                    "income_categories" -> prefs[PREF_KEY_INC_CAT] = value
+                                    "expense_pay_types" -> prefs[PREF_KEY_EXP_PAY] = value
+                                    "income_pay_types" -> prefs[PREF_KEY_INC_PAY] = value
+                                    "is_dark" -> prefs[booleanPreferencesKey("is_dark")] = value.toBoolean()
+                                    "sort_by" -> prefs[stringPreferencesKey("sort_by")] = value
+                                }
+                            }
+                        }
+                    }
+                    
+                    showMessage = "数据恢复成功"
+                    showRestoreDialog = null
+                }?.onFailure { error ->
+                    showMessage = "数据恢复失败: ${error.message}"
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+    
+    fun deleteBackup(backupFile: BackupFileInfo) {
+        scope.launch {
+            isLoading = true
+            try {
+                val result = backupManager?.deleteBackup(backupFile.fileName)
+                result?.onSuccess {
+                    showMessage = "备份文件删除成功"
+                    showDeleteBackupDialog = null
+                    // 刷新备份文件列表
+                    backupManager.getBackupFiles().onSuccess { files ->
+                        backupFiles = files
+                    }
+                }?.onFailure { error ->
+                    showMessage = "删除失败: ${error.message}"
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            scope.launch {
+                showImporting = true
+                importError = null
+                val result = backupManager?.importBackupFromJsonUri(context, it)
+                result?.onSuccess { (restoredBills, restoredSettings) ->
+                    saveBills?.invoke(restoredBills)
+                    // 恢复设置数据
+                    context.dataStore.edit { prefs ->
+                        restoredSettings.forEach { (key, value) ->
+                            when (key) {
+                                "expense_categories" -> prefs[PREF_KEY_EXP_CAT] = value
+                                "income_categories" -> prefs[PREF_KEY_INC_CAT] = value
+                                "expense_pay_types" -> prefs[PREF_KEY_EXP_PAY] = value
+                                "income_pay_types" -> prefs[PREF_KEY_INC_PAY] = value
+                                "is_dark" -> prefs[booleanPreferencesKey("is_dark")] = value.toBoolean()
+                                "sort_by" -> prefs[stringPreferencesKey("sort_by")] = value
+                            }
+                        }
+                    }
+                    showMessage = "从JSON文件恢复成功"
+                    showImporting = false
+                }?.onFailure { error ->
+                    importError = "导入失败: ${error.message}"
+                    showImporting = false
+                }
+            }
+        }
     }
 
     // 头像持久化
@@ -880,6 +1087,152 @@ fun MyScreen(
             }
                 }
         Spacer(Modifier.height(16.dp))
+        
+        // 数据备份管理卡片
+        if (backupManager != null) {
+            Card(
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("数据备份", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { showBackupPathDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = "备份文件位置",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // 创建备份按钮
+                    Button(
+                        onClick = { showBackupDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading
+                    ) {
+                        Icon(Icons.Default.Backup, contentDescription = "创建备份")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("创建备份")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // 从JSON文件恢复按钮
+                    OutlinedButton(
+                        onClick = { importLauncher.launch("application/json") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading && !showImporting
+                    ) {
+                        Icon(Icons.Default.Restore, contentDescription = "从JSON恢复")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("从JSON文件恢复")
+                    }
+                    if (showImporting) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("正在导入JSON...", fontSize = 13.sp)
+                        }
+                    }
+                    if (importError != null) {
+                        Text(importError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // 备份文件列表
+                    if (isLoadingBackupFiles) {
+                        // 加载时显示骨架屏
+                        Text("备份文件列表", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SkeletonLoading(
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else if (backupFiles.isNotEmpty()) {
+                        Text("备份文件列表", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            backupFiles.forEach { backupFile ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    elevation = CardDefaults.cardElevation(0.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = backupFile.fileName,
+                                                    fontWeight = FontWeight.Medium,
+                                                    fontSize = 14.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                if (backupFile.description.isNotEmpty()) {
+                                                    Text(
+                                                        text = backupFile.description,
+                                                        fontSize = 12.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                Text(
+                                                    text = "账单数量: ${backupFile.billsCount} | 文件大小: ${backupFile.fileSize / 1024}KB",
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    text = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                                                        .format(Date(backupFile.timestamp)),
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Row {
+                                                IconButton(
+                                                    onClick = { showRestoreDialog = backupFile },
+                                                    enabled = !isLoading
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Restore,
+                                                        contentDescription = "恢复",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                IconButton(
+                                                    onClick = { showDeleteBackupDialog = backupFile },
+                                                    enabled = !isLoading
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Delete,
+                                                        contentDescription = "删除",
+                                                        tint = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = "暂无备份文件",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        
         // 关于与帮助
         Card {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -1206,6 +1559,111 @@ fun MyScreen(
                 dismissButton = null
             )
         }
+        
+        // 备份相关对话框
+        // 创建备份对话框
+        if (showBackupDialog) {
+            AlertDialog(
+                onDismissRequest = { showBackupDialog = false },
+                title = { Text("创建备份") },
+                text = {
+                    Column {
+                        Text("将为当前数据创建备份文件")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = backupDescription,
+                            onValueChange = { backupDescription = it },
+                            label = { Text("备份描述（可选）") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { createBackup() },
+                        enabled = !isLoading
+                    ) { Text("创建") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showBackupDialog = false
+                            backupDescription = ""
+                        }
+                    ) { Text("取消") }
+                }
+            )
+        }
+        
+        // 恢复备份对话框
+        showRestoreDialog?.let { backupFile ->
+            AlertDialog(
+                onDismissRequest = { showRestoreDialog = null },
+                title = { Text("恢复备份") },
+                text = {
+                    Text("确定要恢复备份文件 \"${backupFile.fileName}\" 吗？\n当前数据将被覆盖。")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { restoreBackup(backupFile) },
+                        enabled = !isLoading
+                    ) { Text("恢复") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showRestoreDialog = null }
+                    ) { Text("取消") }
+                }
+            )
+        }
+        
+        // 删除备份对话框
+        showDeleteBackupDialog?.let { backupFile ->
+            AlertDialog(
+                onDismissRequest = { showDeleteBackupDialog = null },
+                title = { Text("删除备份") },
+                text = {
+                    Text("确定要删除备份文件 \"${backupFile.fileName}\" 吗？")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { deleteBackup(backupFile) },
+                        enabled = !isLoading
+                    ) { Text("删除") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteBackupDialog = null }
+                    ) { Text("取消") }
+                }
+            )
+        }
+        
+        // 备份路径信息对话框
+        if (showBackupPathDialog) {
+            AlertDialog(
+                onDismissRequest = { showBackupPathDialog = false },
+                title = { Text("备份文件位置") },
+                text = {
+                    Text("备份文件保存在：\n/storage/emulated/0/Keeping/backup/\n\n您可以通过文件管理器访问此目录。")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = { showBackupPathDialog = false }
+                    ) { Text("知道了") }
+                }
+            )
+        }
+        
+        // 显示消息
+        if (showMessage.isNotEmpty()) {
+            LaunchedEffect(showMessage) {
+                Toast.makeText(context, showMessage, Toast.LENGTH_SHORT).show()
+                showMessage = ""
+            }
+        }
+        
         // 底部间距
         Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
     }
