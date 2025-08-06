@@ -34,8 +34,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.navigation.NavController
 import me.ganto.keeping.core.util.ValidationUtils
 import me.ganto.keeping.core.util.ErrorHandler
@@ -171,7 +171,7 @@ fun BillHomeScreen(
                 }
                 // 结余
                 Spacer(Modifier.height(18.dp))
-                HorizontalDivider()
+                Divider()
                 Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("结余", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
@@ -632,7 +632,7 @@ fun AddBillDialog(
                         cal.add(java.util.Calendar.DAY_OF_MONTH, -1)
                         date = cal.time
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前一天")
+                                                    Icon(Icons.Filled.ArrowBack, contentDescription = "前一天")
                     }
                     Text(
                         text = dateFormat.format(date),
@@ -648,7 +648,7 @@ fun AddBillDialog(
                         cal.add(java.util.Calendar.DAY_OF_MONTH, 1)
                         date = cal.time
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "后一天")
+                                                    Icon(Icons.Filled.ArrowForward, contentDescription = "后一天")
                     }
                 }
             }

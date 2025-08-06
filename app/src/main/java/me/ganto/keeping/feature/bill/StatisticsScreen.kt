@@ -28,8 +28,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.shape.CircleShape
@@ -164,7 +164,7 @@ fun StatisticsScreen(
                     ) {
                         Text("年份:", fontWeight = FontWeight.Medium, modifier = Modifier.width(60.dp))
                         IconButton(onClick = { tempYear-- }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上一年")
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "上一年")
                         }
                         Text(
                             text = tempYear.toString(),
@@ -174,7 +174,7 @@ fun StatisticsScreen(
                             textAlign = TextAlign.Center
                         )
                         IconButton(onClick = { tempYear++ }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下一年")
+                            Icon(Icons.Filled.ArrowForward, contentDescription = "下一年")
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -185,7 +185,7 @@ fun StatisticsScreen(
                     ) {
                         Text("月份:", fontWeight = FontWeight.Medium, modifier = Modifier.width(60.dp))
                         IconButton(onClick = { tempMonth = if (tempMonth == 1) 12 else tempMonth - 1 }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月")
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "上个月")
                         }
                         Text(
                             text = tempMonth.toString(),
@@ -195,7 +195,7 @@ fun StatisticsScreen(
                             textAlign = TextAlign.Center
                         )
                         IconButton(onClick = { tempMonth = if (tempMonth == 12) 1 else tempMonth + 1 }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月")
+                            Icon(Icons.Filled.ArrowForward, contentDescription = "下个月")
                         }
                     }
                 }

@@ -7,9 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.List
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -129,7 +129,7 @@ fun NavGraph(
                         ) {
                             Text("年份:", fontWeight = FontWeight.Medium, modifier = Modifier.width(60.dp))
                             IconButton(onClick = { selectedYear-- }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上一年")
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "上一年")
                             }
                             Text(
                                 text = selectedYear.toString(),
@@ -139,7 +139,7 @@ fun NavGraph(
                                 textAlign = TextAlign.Center
                             )
                             IconButton(onClick = { selectedYear++ }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下一年")
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "下一年")
                             }
                         }
                         
@@ -154,7 +154,7 @@ fun NavGraph(
                             IconButton(onClick = { 
                                 selectedMonth = if (selectedMonth == 1) 12 else selectedMonth - 1 
                             }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月")
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "上个月")
                             }
                             Text(
                                 text = selectedMonth.toString(),
@@ -166,7 +166,7 @@ fun NavGraph(
                             IconButton(onClick = { 
                                 selectedMonth = if (selectedMonth == 12) 1 else selectedMonth + 1 
                             }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月")
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "下个月")
                             }
                         }
                     }
@@ -198,7 +198,7 @@ fun NavGraph(
                                             IconButton(onClick = {
                                                 val (y, m) = currentYearMonth.value
                                                 onYearMonthChange(if (m == 1) Pair(y - 1, 12) else Pair(y, m - 1))
-                                            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月") }
+                                            }) { Icon(Icons.Filled.ArrowBack, contentDescription = "上个月") }
                                             Text(
                                                 text = "${currentYearMonth.value.first}年${currentYearMonth.value.second}月",
                                                 fontWeight = FontWeight.Bold,
@@ -209,7 +209,7 @@ fun NavGraph(
                                             IconButton(onClick = {
                                                 val (y, m) = currentYearMonth.value
                                                 onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
-                                            }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
+                                            }) { Icon(Icons.Filled.ArrowForward, contentDescription = "下个月") }
                                         }
                                         1 -> Text("统计", fontWeight = FontWeight.Bold)
                                         2 -> Text("配置", fontWeight = FontWeight.Bold)
@@ -237,7 +237,7 @@ fun NavGraph(
                                                 IconButton(onClick = {
                                                     val (y, m) = currentYearMonth.value
                                                     onYearMonthChange(if (m == 1) Pair(y - 1, 12) else Pair(y, m - 1))
-                                                }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "上个月") }
+                                                }) { Icon(Icons.Filled.ArrowBack, contentDescription = "上个月") }
                                                 Text(
                                                     text = "${currentYearMonth.value.first}年${currentYearMonth.value.second}月",
                                                     fontWeight = FontWeight.Bold,
@@ -249,7 +249,7 @@ fun NavGraph(
                                                 IconButton(onClick = {
                                                     val (y, m) = currentYearMonth.value
                                                     onYearMonthChange(if (m == 12) Pair(y + 1, 1) else Pair(y, m + 1))
-                                                }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "下个月") }
+                                                }) { Icon(Icons.Filled.ArrowForward, contentDescription = "下个月") }
                                             }
                                         }
                                 },
@@ -264,7 +264,7 @@ fun NavGraph(
                                 NavigationBarItem(
                                     selected = navIndex == 0, 
                                     onClick = { setNavIndex(0) }, 
-                                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "账单") }, 
+                                    icon = { Icon(Icons.Filled.List, contentDescription = "账单") }, 
                                     label = { Text("账单") },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -363,15 +363,15 @@ fun NavGraph(
                                     onThemeModeChange = { saveThemeMode(it) }
                                 )
                                 3 -> MyScreen(
-                    themeMode = themeMode, 
-                    onThemeModeChange = { saveThemeMode(it) }, 
-                    navController = navController, 
-                    innerPadding = innerPadding,
-                    backupManager = backupManager,
-                    collectSettingsData = collectSettingsData,
-                    bills = bills,
-                    saveBills = saveBills
-                )
+                                    themeMode = themeMode, 
+                                    onThemeModeChange = { saveThemeMode(it) }, 
+                                    navController = navController, 
+                                    innerPadding = innerPadding,
+                                    backupManager = backupManager,
+                                    collectSettingsData = collectSettingsData,
+                                    bills = bills,
+                                    saveBills = saveBills
+                                )
                             }
                             if (showAddDialog) {
                                 // 保留原有弹窗编辑功能
@@ -412,13 +412,18 @@ fun NavGraph(
                     TestScreen(onBack = { navController.popBackStack() }, navController = navController)
                 }
 
-                composable(ROUTE_SETTINGS) {
-                    SettingsScreen(
-                        navController = navController,
-                        themeMode = themeMode,
-                        onThemeModeChange = { saveThemeMode(it) }
-                    )
-                }
+                                      composable(ROUTE_SETTINGS) {
+                          SettingsScreen(
+                              themeMode = themeMode,
+                              onThemeModeChange = { saveThemeMode(it) },
+                              navController = navController,
+                              innerPadding = PaddingValues(),
+                              backupManager = backupManager,
+                              collectSettingsData = collectSettingsData,
+                              bills = bills,
+                              saveBills = saveBills
+                          )
+                      }
 
                 composable("all_bills") {
                     AllBillsScreen(

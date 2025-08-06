@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,7 +20,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Slider
-import androidx.compose.material3.HorizontalDivider
+
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -130,7 +130,7 @@ fun TestScreen(onBack: () -> Unit, navController: NavController? = null) {
             }
             item {
                 Text("进度条演示", fontWeight = FontWeight.Bold)
-                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { progress = (progress + 0.1f).coerceAtMost(1f) }) { Text("增加") }
                     Spacer(Modifier.width(8.dp))
@@ -184,7 +184,7 @@ fun TestScreen(onBack: () -> Unit, navController: NavController? = null) {
                     }
                 }
             }
-            item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
+            item { Divider(Modifier.padding(vertical = 8.dp)) }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("开关演示", fontSize = 16.sp)

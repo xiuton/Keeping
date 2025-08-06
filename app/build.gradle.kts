@@ -53,13 +53,13 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.google.code.gson:gson:2.10.1")
     // Compose Charts
-    implementation("androidx.compose.material3:material3:1.2.0-alpha10") // 确保最新
+    implementation("androidx.compose.material3:material3:1.1.2") // 使用稳定版本
     implementation("androidx.compose.ui:ui-graphics:1.4.3")
     implementation("androidx.compose.ui:ui:1.4.3")
     implementation("androidx.compose.foundation:foundation:1.4.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.4.3")
     implementation("androidx.compose.ui:ui-text")
-    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
+    implementation("androidx.compose.material3:material3-window-size-class:1.0.0")
     // 图表库
     implementation("com.patrykandpatrick.vico:compose:1.13.0")
     implementation("com.patrykandpatrick.vico:core:1.13.0")

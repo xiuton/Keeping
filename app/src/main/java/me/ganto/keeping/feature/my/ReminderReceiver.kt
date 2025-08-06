@@ -13,15 +13,17 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import me.ganto.keeping.MainActivity
 
+
 class ReminderReceiver : BroadcastReceiver() {
     @SuppressLint("ScheduleExactAlarm")
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            // 读取DataStore中的hour/minute，重新注册闹钟
-            val dataStore = context.applicationContext.getSharedPreferences("datastore.preferences", Context.MODE_PRIVATE)
-            val hour = dataStore.getString("reminder_time", "20:00")?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 20
-            val minute = dataStore.getString("reminder_time", "20:00")?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0
-            val enabled = dataStore.getString("reminder_enabled", "false") == "true"
+            // 读取SharedPreferences中的hour/minute，重新注册闹钟
+            val sharedPrefs = context.applicationContext.getSharedPreferences("bills", Context.MODE_PRIVATE)
+            val timeValue = sharedPrefs.getString("reminder_time", "20:00") ?: "20:00"
+            val hour = timeValue.split(":")?.getOrNull(0)?.toIntOrNull() ?: 20
+            val minute = timeValue.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0
+            val enabled = sharedPrefs.getString("reminder_enabled", "false") == "true"
             if (enabled) {
                 // 重新注册闹钟
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
@@ -51,8 +53,12 @@ class ReminderReceiver : BroadcastReceiver() {
         }
         
         // 检查提醒是否仍然启用
-        val dataStore = context.applicationContext.getSharedPreferences("datastore.preferences", Context.MODE_PRIVATE)
-        val enabled = dataStore.getString("reminder_enabled", "false") == "true"
+        val enabled = try {
+            val sharedPrefs = context.applicationContext.getSharedPreferences("bills", Context.MODE_PRIVATE)
+            sharedPrefs.getString("reminder_enabled", "false") == "true"
+        } catch (e: Exception) {
+            false
+        }
         
         // 只有在提醒启用时才发送通知和注册下一次
         if (enabled) {

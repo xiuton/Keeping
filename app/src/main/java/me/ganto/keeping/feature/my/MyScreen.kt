@@ -1413,7 +1413,7 @@ fun MyScreen(
                             1, 2 -> {
                                 Spacer(Modifier.height(20.dp))
                                 LinearProgressIndicator(
-                                    progress = { if (downloadTotal > 0) downloadCurrent / downloadTotal.toFloat() else 0f },
+                                    progress = if (downloadTotal > 0) downloadCurrent / downloadTotal.toFloat() else 0f,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(6.dp),

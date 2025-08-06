@@ -1,7 +1,7 @@
 package me.ganto.keeping.feature.feedback
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -31,7 +31,7 @@ fun FeedbackScreen(onBack: () -> Unit) {
                         },
                         enabled = enabled
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

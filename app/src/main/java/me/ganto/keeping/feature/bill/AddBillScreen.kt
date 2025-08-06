@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.style.TextAlign
@@ -124,7 +124,7 @@ fun AddBillScreen(
                     title = { Text("新增账单") },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -342,7 +342,7 @@ fun AddBillScreen(
                     cal.add(Calendar.DAY_OF_MONTH, -1)
                     date = cal.time
                 }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前一天")
+                                                Icon(Icons.Filled.ArrowBack, contentDescription = "前一天")
                 }
                 Text(
                     text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date),
@@ -358,7 +358,7 @@ fun AddBillScreen(
                     cal.add(Calendar.DAY_OF_MONTH, 1)
                     date = cal.time
                 }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "后一天")
+                                                Icon(Icons.Filled.ArrowForward, contentDescription = "后一天")
                 }
             }
             if (showDatePicker) {

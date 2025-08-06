@@ -42,6 +42,7 @@
         <receiver android:name=".feature.my.ReminderReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="me.ganto.keeping.ACTION_REMIND" />
             </intent-filter>
         </receiver>
     </application>
