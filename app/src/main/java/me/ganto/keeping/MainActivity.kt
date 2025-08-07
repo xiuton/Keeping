@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
                 var navIndex by rememberSaveable { mutableStateOf(0) }
                 var showAddDialog by remember { mutableStateOf(false) }
                 val backupManager = remember { BackupManager(context) }
+
                 
                 // 加载数据
                 LaunchedEffect(Unit) {

@@ -366,11 +366,7 @@ fun NavGraph(
                                     themeMode = themeMode, 
                                     onThemeModeChange = { saveThemeMode(it) }, 
                                     navController = navController, 
-                                    innerPadding = innerPadding,
-                                    backupManager = backupManager,
-                                    collectSettingsData = collectSettingsData,
-                                    bills = bills,
-                                    saveBills = saveBills
+                                    innerPadding = innerPadding
                                 )
                             }
                             if (showAddDialog) {

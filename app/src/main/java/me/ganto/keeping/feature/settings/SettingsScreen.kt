@@ -1,6 +1,7 @@
 package me.ganto.keeping.feature.settings
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
@@ -313,6 +314,7 @@ fun SettingsScreen(
     }
 
     // 带重试和超时的网络请求
+    @SuppressLint("SuspiciousIndentation")
     fun fetchWithRetry(urlStr: String, maxRetry: Int = 3, timeout: Int = 8000): String {
         var lastEx: Exception? = null
         repeat(maxRetry) { attempt ->
