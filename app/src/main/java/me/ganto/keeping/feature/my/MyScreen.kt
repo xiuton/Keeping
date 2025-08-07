@@ -46,14 +46,31 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.offset
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Feedback
+import androidx.lifecycle.viewmodel.compose.viewModel
+import me.ganto.keeping.core.data.MainViewModel
+import me.ganto.keeping.core.util.MoneyUtils
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.AccountBalance
 
 @Composable
 fun MyScreen(
     themeMode: String,
     onThemeModeChange: (String) -> Unit,
     navController: NavController,
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    onStatisticsClick: () -> Unit = {}
 ) {
+    val viewModel: MainViewModel = viewModel()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -157,6 +174,42 @@ fun MyScreen(
     // 弹窗控制
     var showDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAllData(context)
+        viewModel.loadBudget(context)
+    }
+    val bills = viewModel.bills
+    val budget = viewModel.budget
+    val expenseCategories = viewModel.expenseCategories
+    val incomeCategories = viewModel.incomeCategories
+
+    // 统计分析数据
+    val now = java.util.Calendar.getInstance()
+    val year = now.get(java.util.Calendar.YEAR)
+    val month = now.get(java.util.Calendar.MONTH) + 1
+    val monthBills = bills.filter {
+        val parts = it.time.split(" ")[0].split("-")
+        parts.size == 3 &&
+        parts[0].toIntOrNull() == year &&
+        parts[1].toIntOrNull() == month
+    }
+    val totalIncome = monthBills.filter { it.amount > 0 }.sumOf { it.amount }
+    val totalExpense = monthBills.filter { it.amount < 0 }.sumOf { it.amount }
+    val balance = MoneyUtils.calculateBalance(totalIncome, totalExpense)
+    val expenseByCategory = monthBills.filter { it.amount < 0 }.groupBy { it.category }.mapValues { it.value.sumOf { b -> -b.amount } }
+    val topExpenseCategory = expenseByCategory.maxByOrNull { it.value }?.key ?: "-"
+    val topExpenseAmount = expenseByCategory.maxByOrNull { it.value }?.value ?: 0.0
+
+    // 预算管理数据
+    val usedBudget = -totalExpense
+    val remainBudget = budget - usedBudget
+    val budgetProgress = if (budget > 0) ((usedBudget / budget).coerceIn(0.0, 1.0)).toFloat() else 0f
+
+    // 分类摘要
+    val allCategories = expenseCategories + incomeCategories
+    val categoryPreview = allCategories.take(4).joinToString("、")
+    val categoryCount = allCategories.size
 
     Column(
         modifier = Modifier
@@ -280,13 +333,127 @@ fun MyScreen(
                 )
             }
         }
+        // 新增：数据概览区
+        Spacer(Modifier.height(16.dp))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            ModernOverviewCard(title = "收入", value = MoneyUtils.formatMoney(totalIncome), color = Color(0xFF10B981), icon = Icons.Filled.TrendingUp)
+            ModernOverviewCard(title = "支出", value = MoneyUtils.formatMoney(-totalExpense), color = Color(0xFFEF4444), icon = Icons.Filled.TrendingDown)
+            ModernOverviewCard(title = "结余", value = MoneyUtils.formatMoney(balance), color = Color(0xFF8B5CF6), icon = Icons.Filled.AccountBalance)
+            ModernOverviewCard(title = "预算", value = MoneyUtils.formatMoney(budget), color = Color(0xFFF59E0B), icon = Icons.Filled.AccountBalanceWallet)
+        }
+        Spacer(Modifier.height(24.dp))
+        // 快捷入口区（2行网格）
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                ModernQuickEntry(icon = Icons.Filled.List, label = "我的账单", color = Color(0xFF3B82F6)) { navController.navigate("all_bills") }
+                ModernQuickEntry(icon = Icons.Filled.BarChart, label = "统计分析", color = Color(0xFF10B981)) { onStatisticsClick() }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                ModernQuickEntry(icon = Icons.Filled.AccountBalanceWallet, label = "预算管理", color = Color(0xFFF59E0B)) { /* TODO: 跳转预算管理 */ }
+                ModernQuickEntry(icon = Icons.Filled.Category, label = "我的分类", color = Color(0xFF8B5CF6)) { /* TODO: 跳转我的分类 */ }
+            }
+        }
         // 下方内容区加左右和底部间距
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
         ) {
-            // 删除所有底部板块内容，只保留背景图区域
+            Spacer(Modifier.height(24.dp))
+            // 我的账单
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate("all_bills") },
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.List, contentDescription = "我的账单", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("我的账单", fontWeight = FontWeight.Medium)
+                        Text("查看所有收支明细", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            // 统计分析
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onStatisticsClick() },
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.BarChart, contentDescription = "统计分析", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("统计分析", fontWeight = FontWeight.Medium)
+                        Text("本月收入: ￥${MoneyUtils.formatMoney(totalIncome)}  支出: ￥${MoneyUtils.formatMoney(-totalExpense)}  结余: ￥${MoneyUtils.formatMoney(balance)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        if (topExpenseCategory != "-") {
+                            Text("支出最多: $topExpenseCategory ￥${MoneyUtils.formatMoney(topExpenseAmount)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            // 预算管理
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { /* TODO: 跳转预算管理 */ },
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.AccountBalanceWallet, contentDescription = "预算管理", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("预算管理", fontWeight = FontWeight.Medium)
+                        Text("本月预算: ￥${MoneyUtils.formatMoney(budget)}  已用: ￥${MoneyUtils.formatMoney(usedBudget)}  剩余: ￥${MoneyUtils.formatMoney(remainBudget)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        LinearProgressIndicator(progress = budgetProgress, modifier = Modifier.fillMaxWidth().height(6.dp).padding(vertical = 4.dp))
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            // 我的分类
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { /* TODO: 跳转我的分类 */ },
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Category, contentDescription = "我的分类", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("我的分类", fontWeight = FontWeight.Medium)
+                        Text("$categoryPreview${if (categoryCount > 4) "..." else ""}", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1)
+                        Text("共${categoryCount}个分类", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    }
+                }
+            }
         }
         
         // 底部间距
@@ -359,5 +526,132 @@ fun MyScreen(
                 TextButton(onClick = { showDialog = false }) { Text("取消") }
             }
         )
+    }
+} 
+
+// 新增：概览卡片和快捷入口组件
+@Composable
+fun OverviewCard(title: String, value: String, color: Color) {
+    Card(
+        modifier = Modifier
+            .width(80.dp)
+            .height(80.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f)),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(title, fontSize = 14.sp, color = color, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(6.dp))
+            Text("￥$value", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
+        }
+    }
+}
+
+@Composable
+fun QuickEntry(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+} 
+
+// 新增：现代概览卡片和快捷入口组件
+@Composable
+fun ModernOverviewCard(title: String, value: String, color: Color, icon: ImageVector) {
+    Card(
+        modifier = Modifier
+            .width(85.dp)
+            .height(85.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(color.copy(alpha = 0.1f), color.copy(alpha = 0.05f))
+                    )
+                )
+        ) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(icon, contentDescription = title, tint = color, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(title, fontSize = 12.sp, color = color, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(2.dp))
+                Text("￥$value", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = color)
+            }
+        }
+    }
+}
+
+@Composable
+fun ModernQuickEntry(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .height(80.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(6.dp),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(color.copy(alpha = 0.15f), color.copy(alpha = 0.05f))
+                    )
+                )
+        ) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(label, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(4.dp))
+                    Text("点击查看", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
+                }
+            }
+        }
     }
 } 

@@ -366,7 +366,8 @@ fun NavGraph(
                                     themeMode = themeMode, 
                                     onThemeModeChange = { saveThemeMode(it) }, 
                                     navController = navController, 
-                                    innerPadding = innerPadding
+                                    innerPadding = innerPadding,
+                                    onStatisticsClick = { setNavIndex(1) }
                                 )
                             }
                             if (showAddDialog) {

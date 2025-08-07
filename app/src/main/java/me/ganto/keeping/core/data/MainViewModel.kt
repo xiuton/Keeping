@@ -16,6 +16,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 
 /**
  * MainActivity的ViewModel，负责管理应用的主要状态和数据
@@ -57,6 +58,10 @@ class MainViewModel : ViewModel() {
     var incomePayTypes by mutableStateOf(DefaultValues.INCOME_PAY_TYPES)
         private set
     
+    // 预算数据
+    var budget by mutableStateOf(0.0)
+        private set
+    
     private val gson = Gson()
     
     /**
@@ -68,6 +73,7 @@ class MainViewModel : ViewModel() {
             loadThemeMode(context)
             loadSortBy(context)
             loadCategories(context)
+            loadBudget(context)
         }
     }
     
@@ -148,6 +154,28 @@ class MainViewModel : ViewModel() {
             errorMessage = "加载分类数据失败"
         )
     }
+
+    /**
+     * 加载预算
+     */
+    fun loadBudget(context: Context) {
+        viewModelScope.launch {
+            val value = context.dataStore.data.map { it[budgetKey] ?: "0.0" }.first()
+            budget = value.toDoubleOrNull() ?: 0.0
+        }
+    }
+
+    /**
+     * 保存预算
+     */
+    fun saveBudget(context: Context, value: Double) {
+        budget = value
+        viewModelScope.launch(Dispatchers.IO) {
+            context.dataStore.edit { prefs ->
+                prefs[budgetKey] = value.toString()
+            }
+        }
+    }
     
     /**
      * 保存账单数据
@@ -213,7 +241,12 @@ class MainViewModel : ViewModel() {
             "expense_pay_types" to gson.toJson(expensePayTypes),
             "income_pay_types" to gson.toJson(incomePayTypes),
             "theme_mode" to themeMode,
-            "sort_by" to sortBy
+            "sort_by" to sortBy,
+            "budget" to budget.toString()
         )
+    }
+
+    companion object {
+        val budgetKey = stringPreferencesKey("budget")
     }
 } 
