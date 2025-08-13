@@ -67,6 +67,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import java.time.LocalTime
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -148,6 +149,17 @@ fun SettingsScreen(
             showMessage = "权限已授予"
         } else {
             showMessage = "需要存储权限才能创建外部备份"
+        }
+    }
+
+    // 通知权限请求（Android 13+ 动态权限）
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Toast.makeText(context, "通知权限已授予", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "未授予通知权限，可能无法收到提醒", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -525,10 +537,31 @@ fun SettingsScreen(
     var selectedHour by remember { mutableStateOf(tempHour) }
     var selectedMinute by remember { mutableStateOf(tempMinute) }
     var showReminderTip by remember { mutableStateOf(false) }
+    var permissionRefreshTrigger by remember { mutableStateOf(0) }
+    
+    // 权限状态状态变量
+    var notificationPermissionGranted by remember { mutableStateOf(false) }
+    var alarmPermissionGranted by remember { mutableStateOf(false) }
 
     // DataStore键定义
     val REMINDER_ENABLED_KEY = stringPreferencesKey("reminder_enabled")
     val REMINDER_TIME_KEY = stringPreferencesKey("reminder_time")
+
+    // 更新权限状态的函数
+    fun updatePermissionStatus() {
+        notificationPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+        
+        alarmPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }
 
     // 从DataStore读取提醒设置
     LaunchedEffect(Unit) {
@@ -539,6 +572,26 @@ fun SettingsScreen(
         val parts = time.split(":")
         tempHour = parts.getOrNull(0)?.toIntOrNull() ?: 20
         tempMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        
+        // 初始化权限状态
+        updatePermissionStatus()
+    }
+    
+    // 当权限刷新触发器变化时，更新权限状态
+    LaunchedEffect(permissionRefreshTrigger) {
+        updatePermissionStatus()
+    }
+    
+    // 当弹窗显示时，立即更新权限状态
+    LaunchedEffect(showReminderTip) {
+        if (showReminderTip) {
+            updatePermissionStatus()
+            // 弹窗显示期间，每隔一段时间刷新权限状态
+            while (showReminderTip) {
+                kotlinx.coroutines.delay(2000) // 每2秒刷新一次
+                updatePermissionStatus()
+            }
+        }
     }
 
     fun saveReminder() {
@@ -560,47 +613,63 @@ fun SettingsScreen(
 
     fun setDailyReminder() {
         try {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "me.ganto.keeping.ACTION_REMIND"
-            putExtra("hour", tempHour)
-            putExtra("minute", tempMinute)
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+            // 检查通知权限
+            if (!notificationPermissionGranted) {
+                Toast.makeText(context, "请先授予通知权限", Toast.LENGTH_LONG).show()
+                showReminderTip = true
+                return
+            }
             
+            // 检查精确闹钟权限
+            if (!alarmPermissionGranted) {
+                Toast.makeText(context, "请先授予精确闹钟权限", Toast.LENGTH_LONG).show()
+                showReminderTip = true
+                return
+            }
+            
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, ReminderReceiver::class.java).apply {
+                action = "me.ganto.keeping.ACTION_REMIND"
+                putExtra("hour", tempHour)
+                putExtra("minute", tempMinute)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+                
             // 先取消之前的闹钟
             alarmManager.cancel(pendingIntent)
-            
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, tempHour)
-            set(Calendar.MINUTE, tempMinute)
-            set(Calendar.SECOND, 0)
+                
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, tempHour)
+                set(Calendar.MINUTE, tempMinute)
+                set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(Calendar.DAY_OF_MONTH, 1)
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
             }
-        }
-            
+                
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
             } else {
                 alarmManager.setExact(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
             }
-            
+                
             // 显示设置成功的提示
             Toast.makeText(context, "提醒已设置: ${String.format("%02d:%02d", tempHour, tempMinute)}", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(context, "设置提醒失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            // 如果设置失败，显示权限提示
+            showReminderTip = true
         }
     }
 
@@ -621,10 +690,12 @@ fun SettingsScreen(
     }
 
     fun checkAndRequestNotificationPermission() {
+        var needShowTip = false
+        
+        // 检查通知权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                showReminderTip = true
-                return
+                needShowTip = true
             }
         }
         
@@ -632,9 +703,12 @@ fun SettingsScreen(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             if (!alarmManager.canScheduleExactAlarms()) {
-                showReminderTip = true
-                return
+                needShowTip = true
             }
+        }
+        
+        if (needShowTip) {
+            showReminderTip = true
         }
     }
 
@@ -842,7 +916,6 @@ fun SettingsScreen(
                             Spacer(Modifier.width(12.dp))
                             Text("记账提醒", fontSize = 16.sp)
                             Spacer(Modifier.width(4.dp))
-                            var showReminderTip by remember { mutableStateOf(false) }
                             IconButton(
                                 onClick = { showReminderTip = true },
                                 modifier = Modifier.size(20.dp)
@@ -855,16 +928,160 @@ fun SettingsScreen(
                                 )
                             }
                             if (showReminderTip) {
+                                // 当弹窗显示时，立即更新权限状态
+                                LaunchedEffect(showReminderTip) {
+                                    if (showReminderTip) {
+                                        updatePermissionStatus()
+                                    }
+                                }
+                                
                                 AlertDialog(
                                     onDismissRequest = { showReminderTip = false },
-                                    title = { Text("定时提醒可靠性说明", fontWeight = FontWeight.Bold) },
+                                    title = { Text("权限设置与提醒可靠性", fontWeight = FontWeight.Bold) },
                                     text = {
                                         Column {
-                            Text(
-                                                "为保证定时提醒可靠，请在系统设置中：\n- 允许自启动\n- 设置电池无限制\n- 允许后台弹窗/通知\n否则在后台或被杀死时可能无法收到提醒。",
+                                            // 权限说明部分
+                                            Text(
+                                                "为保证记账提醒正常工作，请在系统设置中：\n\n" +
+                                                "1. 允许通知权限\n" +
+                                                "2. 允许精确闹钟权限\n" +
+                                                "3. 允许自启动\n" +
+                                                "4. 设置电池无限制\n" +
+                                                "5. 允许后台弹窗/通知\n\n" +
+                                                "否则在后台或被杀死时可能无法收到提醒。",
                                                 fontSize = 15.sp
                                             )
+                                            
                                             Spacer(modifier = Modifier.height(16.dp))
+                                            
+                                            // 当前权限状态卡片
+                                            Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                                )
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                    Text("当前权限状态：", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    
+                                                    // 通知权限状态
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        TextButton(
+                                                            onClick = {
+                                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                                } else {
+                                                                    try {
+                                                                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                                            putExtra("app_package", context.packageName)
+                                                                            putExtra("app_uid", context.applicationInfo.uid)
+                                                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                                        }
+                                                                        context.startActivity(intent)
+                                                                        // 延迟后触发权限状态刷新
+                                                                        scope.launch {
+                                                                            kotlinx.coroutines.delay(1000)
+                                                                            updatePermissionStatus()
+                                                                        }
+                                                                    } catch (e: Exception) {
+                                                                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                                            data = Uri.parse("package:" + context.packageName)
+                                                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                                        }
+                                                                        context.startActivity(intent)
+                                                                        // 延迟后触发权限状态刷新
+                                                                        scope.launch {
+                                                                            kotlinx.coroutines.delay(1000)
+                                                                            permissionRefreshTrigger++
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            contentPadding = PaddingValues(0.dp)
+                                                        ) {
+                                                            Text(
+                                                                "通知权限",
+                                                                fontSize = 13.sp,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                textDecoration = TextDecoration.Underline,
+                                                                fontWeight = FontWeight.Medium
+                                                            )
+                                                        }
+                                                        val notificationGranted = notificationPermissionGranted
+                                                        Text(
+                                                            if (notificationGranted) "✓ 已授予" else "✗ 未授予",
+                                                            color = if (notificationGranted) Color(0xFF10B981) else Color(0xFFEF4444),
+                                                            fontSize = 13.sp,
+                                                            fontWeight = FontWeight.Medium
+                                                        )
+                                                    }
+                                                    
+                                                                                                            // 精确闹钟权限状态
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                                                                                TextButton(
+                                                                onClick = {
+                                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                                                        try {
+                                                                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                                                                data = Uri.parse("package:" + context.packageName)
+                                                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                                            }
+                                                                            context.startActivity(intent)
+                                                                            // 延迟后触发权限状态刷新
+                                                                            scope.launch {
+                                                                                kotlinx.coroutines.delay(1000)
+                                                                                updatePermissionStatus()
+                                                                            }
+                                                                        } catch (e: Exception) {
+                                                                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                                                data = Uri.parse("package:" + context.packageName)
+                                                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                                            }
+                                                                            context.startActivity(intent)
+                                                                            // 延迟后触发权限状态刷新
+                                                                            scope.launch {
+                                                                                kotlinx.coroutines.delay(1000)
+                                                                                updatePermissionStatus()
+                                                                            }
+                                                                        }
+                                                                    } else {
+                                                                        Toast.makeText(context, "当前系统无需此权限", Toast.LENGTH_SHORT).show()
+                                                                    }
+                                                                },
+                                                            contentPadding = PaddingValues(0.dp)
+                                                        ) {
+                                                            Text(
+                                                                "精确闹钟权限",
+                                                                fontSize = 13.sp,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                textDecoration = TextDecoration.Underline,
+                                                                fontWeight = FontWeight.Medium
+                                                            )
+                                                        }
+                                                        val alarmGranted = alarmPermissionGranted
+                                                        Text(
+                                                            if (alarmGranted) "✓ 已授予" else "✗ 未授予",
+                                                            color = if (alarmGranted) Color(0xFF10B981) else Color(0xFFEF4444),
+                                                            fontSize = 13.sp,
+                                                            fontWeight = FontWeight.Medium
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            
+                                            // 测试通知按钮
                                             OutlinedButton(
                                                 onClick = {
                                                     // 立即发送测试通知
@@ -885,23 +1102,31 @@ fun SettingsScreen(
                                                 },
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                Text("测试通知")
+                                                Text("测试通知功能")
                                             }
                                         }
                                     },
                                     confirmButton = {
-                                        Button(onClick = {
+                                        TextButton(onClick = {
                                             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                                 data = Uri.parse("package:" + context.packageName)
                                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             }
                                             context.startActivity(intent)
+                                            // 延迟后触发权限状态刷新
+                                            scope.launch {
+                                                kotlinx.coroutines.delay(1000)
+                                                updatePermissionStatus()
+                                            }
+                                            showReminderTip = false
                                         }) {
-                                            Text("一键前往系统设置")
+                                            Text("前往系统设置")
                                         }
                                     },
                                     dismissButton = {
-                                        TextButton(onClick = { showReminderTip = false }) { Text("关闭") }
+                                        TextButton(onClick = { showReminderTip = false }) { 
+                                            Text("稍后设置") 
+                                        }
                                     }
                                 )
                             }
@@ -909,14 +1134,26 @@ fun SettingsScreen(
                         Switch(
                             checked = reminderEnabled,
                             onCheckedChange = { enabled ->
-                                reminderEnabled = enabled
                                 if (enabled) {
-                                    checkAndRequestNotificationPermission()
-                                    setDailyReminder()
+                                    // 开启提醒前先检查权限
+                                    if (!notificationPermissionGranted) {
+                                        Toast.makeText(context, "请先授予通知权限", Toast.LENGTH_LONG).show()
+                                        showReminderTip = true
+                                    } else if (!alarmPermissionGranted) {
+                                        Toast.makeText(context, "请先授予精确闹钟权限", Toast.LENGTH_LONG).show()
+                                        showReminderTip = true
+                                    } else {
+                                        // 权限检查通过，设置提醒
+                                        reminderEnabled = true
+                                        setDailyReminder()
+                                        saveReminder()
+                                    }
                                 } else {
+                                    // 关闭提醒
+                                    reminderEnabled = false
                                     cancelDailyReminder()
+                                    saveReminder()
                                 }
-                                saveReminder()
                             }
                         )
                     }
@@ -1468,42 +1705,7 @@ fun SettingsScreen(
         )
     }
 
-    // 提醒权限提示对话框
-    if (showReminderTip) {
-        AlertDialog(
-            onDismissRequest = { showReminderTip = false },
-            title = { Text("权限设置", fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    "为保证记账提醒正常工作，请在系统设置中：\n\n" +
-                    "1. 允许通知权限\n" +
-                    "2. 允许精确闹钟权限\n" +
-                    "3. 允许自启动\n" +
-                    "4. 设置电池无限制\n" +
-                    "5. 允许后台弹窗/通知\n\n" +
-                    "否则在后台或被杀死时可能无法收到提醒。",
-                    fontSize = 15.sp
-                )
-            },
-            confirmButton = {
-                Button(onClick = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:" + context.packageName)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(intent)
-                    showReminderTip = false
-                }) {
-                    Text("前往系统设置")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showReminderTip = false }) {
-                    Text("稍后设置")
-                }
-            }
-        )
-    }
+
 
     // 新版本弹窗
     if (showUpdateDialog) {

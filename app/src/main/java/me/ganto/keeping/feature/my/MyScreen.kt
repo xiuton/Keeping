@@ -62,6 +62,8 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 @Composable
 fun MyScreen(
@@ -175,6 +177,10 @@ fun MyScreen(
     // 弹窗控制
     var showDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
+    
+    // 预算设置弹窗控制
+    var showBudgetDialog by remember { mutableStateOf(false) }
+    var tempBudget by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.loadAllData(context)
@@ -409,7 +415,10 @@ fun MyScreen(
                 title = "预算管理",
                 subtitle = "本月预算: ￥${MoneyUtils.formatMoney(budget)}  已用: ￥${MoneyUtils.formatMoney(usedBudget)}  剩余: ￥${MoneyUtils.formatMoney(remainBudget)}",
                 color = Color(0xFFF59E0B),
-                onClick = { /* TODO: 跳转预算管理 */ },
+                onClick = { 
+                    tempBudget = budget.toString()
+                    showBudgetDialog = true 
+                },
                 extraContent = {
                     LinearProgressIndicator(
                         progress = budgetProgress, 
@@ -503,6 +512,119 @@ fun MyScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) { Text("取消") }
+            }
+        )
+    }
+    
+    // 预算设置弹窗
+    if (showBudgetDialog) {
+        AlertDialog(
+            onDismissRequest = { showBudgetDialog = false },
+            title = { Text("设置月度预算") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // 当前预算使用情况
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFF59E0B).copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                "当前预算使用情况",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFFF59E0B)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("已用预算", fontSize = 12.sp)
+                                Text("￥${MoneyUtils.formatMoney(usedBudget)}", 
+                                     fontWeight = FontWeight.Bold, 
+                                     fontSize = 12.sp,
+                                     color = Color(0xFFEF4444))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("剩余预算", fontSize = 12.sp)
+                                Text("￥${MoneyUtils.formatMoney(remainBudget)}", 
+                                     fontWeight = FontWeight.Bold, 
+                                     fontSize = 12.sp,
+                                     color = if (remainBudget >= 0) Color(0xFF10B981) else Color(0xFFEF4444))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = budgetProgress,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp),
+                                color = Color(0xFFF59E0B),
+                                trackColor = Color(0xFFF59E0B).copy(alpha = 0.2f)
+                            )
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // 预算输入框
+                    OutlinedTextField(
+                        value = tempBudget,
+                        onValueChange = { 
+                            // 只允许输入数字和小数点
+                            if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) {
+                                tempBudget = it
+                            }
+                        },
+                        label = { Text("月度预算金额") },
+                        prefix = { Text("￥", color = MaterialTheme.colorScheme.primary) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal
+                        ),
+                        singleLine = true
+                    )
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    Text(
+                        "设置合理的月度预算有助于控制支出",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val budgetValue = tempBudget.toDoubleOrNull() ?: 0.0
+                        if (budgetValue >= 0) {
+                            viewModel.saveBudget(context, budgetValue)
+                            showBudgetDialog = false
+                            Toast.makeText(context, "预算设置成功", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "请输入有效的预算金额", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    enabled = tempBudget.isNotBlank() && tempBudget.toDoubleOrNull() != null
+                ) { 
+                    Text("保存") 
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBudgetDialog = false }) { 
+                    Text("取消") 
+                }
             }
         )
     }
